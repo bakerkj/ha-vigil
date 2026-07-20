@@ -1,0 +1,34 @@
+name: prek
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  prek:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      # Cache prek's hook envs (cloned hook repos + their installed tools —
+      # ruff, prettier's node_modules, actionlint binary, codespell, etc.).
+      # Keyed on .pre-commit-config.yaml so a hook bump cleanly invalidates;
+      # restore-keys lets us reuse on partial hook changes for a warm-ish run.
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/.cache/prek
+          key: prek-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            prek-${{ runner.os }}-
+      # The eslint / vitest hooks shell out to the project's `npm run lint` /
+      # `npm test`, so the frontend dev deps must be installed in the workspace
+      # first (the runner ships node/npm; no extra action needed).
+      - run: npm ci
+      # mypy and gen-frontend-types are skipped here (both need the full HA
+      # dependency env; the dedicated mypy.yaml / gen-types.yaml workflows run
+      # them). The other JS hooks run against the prek-action's own node.
+      - uses: j178/prek-action@bdca6f102f98e2b4c7029491a53dfd366469e33d # v2.0.4
+        env:
+          SKIP: no-commit-to-branch,mypy,gen-frontend-types
+        with:
+          extra-args: --all-files

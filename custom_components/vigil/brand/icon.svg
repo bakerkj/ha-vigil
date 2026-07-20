@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Vigil">
+  <defs>
+    <linearGradient id="shield" x1="40" y1="24" x2="216" y2="232" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2D3A8C"/>
+      <stop offset="1" stop-color="#21B6A8"/>
+    </linearGradient>
+    <radialGradient id="iris" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#EAFBF8"/>
+      <stop offset="1" stop-color="#A7ECE4"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Shield: protection / monitoring boundary -->
+  <path fill="url(#shield)"
+        d="M128 18
+           L210 50
+           V126
+           C210 178 175 214 128 238
+           C81 214 46 178 46 126
+           V50
+           Z"/>
+
+  <!-- Stylized open eye: outer almond -->
+  <path fill="none" stroke="#EAFBF8" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"
+        d="M64 124
+           C90 92 166 92 192 124
+           C166 156 90 156 64 124 Z"/>
+
+  <!-- Iris -->
+  <circle cx="128" cy="124" r="28" fill="url(#iris)"/>
+
+  <!-- Radar pulse sweep arcs emanating from pupil -->
+  <path fill="none" stroke="#2D3A8C" stroke-width="6.5" stroke-linecap="round"
+        d="M128 124 L153 102" opacity="0.9"/>
+  <path fill="none" stroke="#2D3A8C" stroke-width="5" stroke-linecap="round" opacity="0.55"
+        d="M150 142 A34 34 0 0 0 142 100"/>
+  <path fill="none" stroke="#2D3A8C" stroke-width="4" stroke-linecap="round" opacity="0.3"
+        d="M162 154 A50 50 0 0 0 150 90"/>
+
+  <!-- Pupil -->
+  <circle cx="128" cy="124" r="9.5" fill="#2D3A8C"/>
+</svg>

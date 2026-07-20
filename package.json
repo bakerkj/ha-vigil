@@ -1,0 +1,22 @@
+{
+  "name": "ha-vigil-frontend",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Dev tooling for the Vigil dashboard card (lint / typecheck / test).",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint custom_components/vigil/frontend tests/frontend",
+    "typecheck": "tsc -p jsconfig.json",
+    "test": "vitest run",
+    "gen:types": "uv run python scripts/gen_frontend_types.py"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "eslint": "^10.0.0",
+    "globals": "^17.0.0",
+    "json-schema-to-typescript": "^15.0.4",
+    "jsdom": "^29.0.0",
+    "typescript": "^7.0.0",
+    "vitest": "^4.0.0"
+  }
+}

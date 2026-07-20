@@ -1,0 +1,30 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: Validate version matches release tag
+        run: |
+          version=$(python3 -c "import json; print(json.load(open('custom_components/vigil/manifest.json'))['version'])")
+          tag="${GITHUB_REF#refs/tags/v}"
+          if [ "$version" != "$tag" ]; then
+            echo "manifest.json version ($version) does not match release tag ($tag)"
+            exit 1
+          fi
+      - name: Build release zip
+        run: |
+          cd custom_components/vigil
+          zip -r "$GITHUB_WORKSPACE/vigil.zip" .
+      - name: Attach zip to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${GITHUB_REF#refs/tags/}" vigil.zip --clobber

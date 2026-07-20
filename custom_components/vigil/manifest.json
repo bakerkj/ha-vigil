@@ -1,0 +1,27 @@
+{
+  "domain": "vigil",
+  "name": "Vigil",
+  "version": "0.0.1",
+  "config_flow": true,
+  "single_config_entry": true,
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "dependencies": [
+    "http",
+    "persistent_notification"
+  ],
+  "after_dependencies": [
+    "frontend",
+    "lovelace",
+    "recorder",
+    "hassio"
+  ],
+  "documentation": "https://github.com/bakerkj/ha-vigil",
+  "issue_tracker": "https://github.com/bakerkj/ha-vigil/issues",
+  "codeowners": [
+    "@bakerkj"
+  ],
+  "requirements": [
+    "pydantic>=2"
+  ]
+}

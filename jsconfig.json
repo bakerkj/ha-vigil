@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "checkJs": true,
+    "allowJs": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "custom_components/vigil/frontend/**/*.js",
+    "custom_components/vigil/frontend/**/*.d.ts"
+  ]
+}
