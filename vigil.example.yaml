@@ -1,0 +1,55 @@
+# Example Vigil configuration (`vigil.yaml`).
+#
+# Copy to your Home Assistant config directory as `vigil.yaml` (next to
+# configuration.yaml) and edit for your setup. This file is DEPLOYMENT-SPECIFIC —
+# it is not shipped or loaded from the integration. No file = both features off.
+# Edits are picked up automatically on the next detection cycle. (The legacy
+# `vigil_watch.yaml` — a bare list of watch rules — is still read when this file
+# is absent.)
+#
+# Two sections, both optional:
+#   watch:   flag a device when one of its entities holds a non-"ok" value.
+#   ignore:  suppress a specific signal for the entities a selector matches.
+
+# --- Watch rules (Engine 4) --------------------------------------------------
+# Each rule names an INTEGRATION (the entity's platform) AND at least one ENTITY
+# criterion — both must match, so a same-named sensor from another integration is
+# never caught by accident.
+watch:
+  - name: ESPHome component health
+    integration: esphome # the entity's platform must equal this
+    match: # at least one criterion; all listed must match
+      entity_id_glob: "sensor.*_component_*" # fnmatch globbing: * ? [seq]
+    ok_states: ["ok", "none", ""] # healthy values (case-insensitive)
+    ignore_unavailable: true # skip unavailable/unknown (an offline concern)
+    detail: "Component fault: {state}" # {state} / {entity_id} / {name}
+
+  # Debounce + sibling-detail: flag only after 5 min not-ok (grace_seconds), keep
+  # flagged until 5 min ok (clear_seconds); name the failing component from a
+  # paired text sensor via {detail_state}.
+  - name: Component health (debounced, named)
+    integration: esphome
+    match:
+      entity_id_suffix: "_status"
+    ok_states: ["ok", "none", ""]
+    grace_seconds: 300
+    clear_seconds: 300
+    detail_entity_suffix: "_failing_component"
+    detail: "Component fault: {detail_state}"
+
+# --- Ignore rules ------------------------------------------------------------
+# Suppress a signal for the entities a selector matches. The selector uses the
+# same fields as a watch rule (`integration` + a `match` block).
+#
+# action: connectivity — do NOT treat the matched entity as a connectivity
+#   signal. Use this when an integration mislabels a sensor as
+#   `device_class: connectivity` that isn't the device's own reachability — e.g.
+#   the Litter-Robot's "hopper_connected" accessory sensor, which reads "off" when
+#   no LitterHopper is attached and would otherwise flag the robot offline. One
+#   rule covers every such device (no need to list each entity id).
+ignore:
+  - action: connectivity
+    integration: litterrobot
+    match:
+      device_class: connectivity
+      entity_id_suffix: "_hopper_connected"

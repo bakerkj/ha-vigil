@@ -1,0 +1,95 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vigil",
+        "description": "Configure how Vigil watches your integrations, devices, and entities for health issues.",
+        "data": {
+          "scan_interval": "Scan interval (seconds)",
+          "grace_period_minutes": "Grace period (minutes)",
+          "staleness_multiplier": "Staleness multiplier",
+          "startup_ignore_seconds": "Startup ignore (seconds)",
+          "battery_device_grace_multiplier": "Battery device grace multiplier",
+          "enable_notification": "Create persistent notification",
+          "enable_app_monitoring": "Monitor app health",
+          "recorder_lookback_days": "Recorder lookback days (0 = auto, match recorder retention)",
+          "excluded_domains": "Excluded domains",
+          "excluded_integrations": "Excluded integrations",
+          "excluded_entity_ids": "Excluded entities",
+          "excluded_device_ids": "Excluded devices",
+          "excluded_apps": "Excluded apps",
+          "staleness_excluded_integrations": "Exclude integrations from staleness (silent/stale) checks",
+          "staleness_excluded_device_ids": "Exclude devices from staleness (silent/stale) checks",
+          "availability_ignored_platforms": "Annotation platforms ignored for availability (metadata that stays online when the device is offline)",
+          "interval_store_url": "Interval store URL (blank = local SQLite)"
+        },
+        "data_description": {
+          "interval_store_url": "Optional SQLAlchemy URL to persist learned intervals in an external database over a Vigil-owned connection, separate from the recorder — e.g. mysql+pymysql://user:password@host/dbname. Leave blank to use the default local SQLite file."
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Only one Vigil instance is allowed."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Vigil",
+        "description": "Configure how Vigil watches your integrations, devices, and entities for health issues.",
+        "data": {
+          "scan_interval": "Scan interval (seconds)",
+          "grace_period_minutes": "Grace period (minutes)",
+          "staleness_multiplier": "Staleness multiplier",
+          "startup_ignore_seconds": "Startup ignore (seconds)",
+          "battery_device_grace_multiplier": "Battery device grace multiplier",
+          "enable_notification": "Create persistent notification",
+          "enable_app_monitoring": "Monitor app health",
+          "recorder_lookback_days": "Recorder lookback days (0 = auto, match recorder retention)",
+          "excluded_domains": "Excluded domains",
+          "excluded_integrations": "Excluded integrations",
+          "excluded_entity_ids": "Excluded entities",
+          "excluded_device_ids": "Excluded devices",
+          "excluded_apps": "Excluded apps",
+          "staleness_excluded_integrations": "Exclude integrations from staleness (silent/stale) checks",
+          "staleness_excluded_device_ids": "Exclude devices from staleness (silent/stale) checks",
+          "availability_ignored_platforms": "Annotation platforms ignored for availability (metadata that stays online when the device is offline)",
+          "interval_store_url": "Interval store URL (blank = local SQLite)"
+        },
+        "data_description": {
+          "interval_store_url": "Optional SQLAlchemy URL to persist learned intervals in an external database over a Vigil-owned connection, separate from the recorder — e.g. mysql+pymysql://user:password@host/dbname. Leave blank to use the default local SQLite file."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "total_issues": {
+        "name": "Total Issues"
+      },
+      "integration_failures": {
+        "name": "Integration Failures"
+      },
+      "devices_offline": {
+        "name": "Devices Offline"
+      },
+      "stale_devices": {
+        "name": "Stale Devices"
+      },
+      "device_faults": {
+        "name": "Device Faults"
+      },
+      "app_issues": {
+        "name": "App Issues"
+      },
+      "state": {
+        "name": "State"
+      }
+    },
+    "button": {
+      "clear_acknowledgements": {
+        "name": "Clear acknowledgements"
+      }
+    }
+  }
+}
