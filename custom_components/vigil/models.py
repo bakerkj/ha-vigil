@@ -386,7 +386,7 @@ class VigilIssueDict(TypedDict):
 
 @dataclass
 class VigilIssue:
-    """A single detected problem, ready for notification / sensors / panel."""
+    """A single detected problem, ready for notification / sensors / card."""
 
     kind: IssueKind
     name: str
@@ -413,7 +413,7 @@ class VigilIssue:
         return max(0.0, (now - self.since).total_seconds())
 
     def as_dict(self, now: datetime) -> VigilIssueDict:
-        """JSON-serializable form for sensor attributes and the panel feed."""
+        """JSON-serializable form for sensor attributes and the card feed."""
         return VigilIssueDict(
             kind=str(self.kind),
             name=self.name,
@@ -446,7 +446,7 @@ def issue_key(issue: VigilIssue) -> str:
 
 
 class IntegrationHealthRow(TypedDict):
-    """One row of the per-integration health table shown in the panel."""
+    """One row of the per-integration health table shown in the card."""
 
     domain: str
     title: str

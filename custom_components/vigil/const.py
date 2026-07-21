@@ -122,7 +122,7 @@ DEFAULT_BATTERY_GRACE_MULTIPLIER = 2.0
 # reconstruction spans exactly the retained history. An explicit 1..MAX overrides;
 # RECORDER_LOOKBACK_DAYS (7) is the fallback if retention can't be read.
 DEFAULT_RECORDER_LOOKBACK_DAYS = 0
-# Off = no notification created/updated (existing one dismissed); panel and
+# Off = no notification created/updated (existing one dismissed); card and
 # sensors still work.
 DEFAULT_ENABLE_NOTIFICATION = False
 # On by default; a no-op anyway on non-Supervised installs (empty snapshot).

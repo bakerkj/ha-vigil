@@ -15,7 +15,7 @@ from .reporting.serialize import serialize_vigil_data
 
 
 class VigilStateView(HomeAssistantView):
-    """Serve the current Vigil state as JSON for the dashboard panel."""
+    """Serve the current Vigil state as JSON for the dashboard card."""
 
     url = API_STATE_PATH
     name = "api:vigil:state"

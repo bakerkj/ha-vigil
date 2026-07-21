@@ -47,7 +47,7 @@ export interface VigilIssue {
   domain: string | null;
 }
 /**
- * One row of the per-integration health table shown in the panel.
+ * One row of the per-integration health table shown in the card.
  */
 export interface IntegrationHealthRow {
   domain: string;

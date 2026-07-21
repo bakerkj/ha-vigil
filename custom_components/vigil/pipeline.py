@@ -121,7 +121,7 @@ async def run_detection(ctx: CycleContext) -> VigilData:
                 issue.name = _failure_display_name(ctx.hass, issue, friendly)
 
     # Stable display order: group by integration, then device name
-    # (case-folded). Section lists and the panel render in this order.
+    # (case-folded). Section lists and the card render in this order.
     issues.sort(
         key=lambda i: (
             (i.integration or i.domain or "").lower(),
