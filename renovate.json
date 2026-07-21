@@ -1,7 +1,13 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":semanticCommits", ":dependencyDashboard"],
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigestsToSemver",
+    ":semanticCommits",
+    ":dependencyDashboard"
+  ],
   "schedule": ["before 6pm on friday"],
+  "timezone": "America/New_York",
   "assignees": ["bakerkj"],
   "pre-commit": {
     "enabled": true
