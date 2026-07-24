@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.4](https://github.com/bakerkj/ha-vigil/compare/v0.0.3...v0.0.4) (2026-07-24)
+
+
+### Miscellaneous Chores
+
+* drop the ruff dev dependency, matching the sibling ha-* repos ([540c08a](https://github.com/bakerkj/ha-vigil/commit/540c08ab4ef2c71e5f3806efa63caabd5d54c11b))
+* drop the ruff dev dependency, matching the sibling ha-* repos ([4c69459](https://github.com/bakerkj/ha-vigil/commit/4c694598318033896ea30743feb3fc076aa724bf))
+
 ## [0.0.3](https://github.com/bakerkj/ha-vigil/compare/v0.0.2...v0.0.3) (2026-07-24)
 
 
