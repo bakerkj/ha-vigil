@@ -152,7 +152,7 @@ def test_signal_only_device_down_fires_without_all_unavailable() -> None:
     is flagged offline even though all_unavailable is False."""
     now = dt_util.utcnow()
     since = now - timedelta(minutes=20)
-    issues, store = _detect(
+    issues, _store = _detect(
         [
             _tuple(
                 connectivity_state=ConnectivityState.DOWN,
@@ -170,7 +170,7 @@ def test_signal_only_device_down_fires_without_all_unavailable() -> None:
 def test_signal_only_device_up_does_not_fire() -> None:
     """No data entities + not DOWN must not fire (no false positive)."""
     now = dt_util.utcnow()
-    issues, store = _detect(
+    issues, _store = _detect(
         [
             _tuple(
                 connectivity_state=ConnectivityState.UP,
@@ -187,7 +187,7 @@ def test_signal_only_device_up_does_not_fire() -> None:
 def test_fires_after_grace_exceeded() -> None:
     now = dt_util.utcnow()
     since = now - timedelta(minutes=20)
-    issues, store = _detect(
+    issues, _store = _detect(
         [_tuple(connectivity_state=ConnectivityState.DOWN)],
         unavailable_since={"dev1": since},
         now=now,

@@ -41,7 +41,6 @@ from pytest_homeassistant_custom_component.components.recorder.common import (
     async_wait_recording_done,
 )
 
-from custom_components.vigil.detection.inputs import build_device_tuples
 from custom_components.vigil.const import (
     CONF_AVAILABILITY_IGNORED_PLATFORMS,
     CONF_BATTERY_GRACE_MULTIPLIER,
@@ -53,6 +52,7 @@ from custom_components.vigil.const import (
 )
 from custom_components.vigil.coordinator import VigilCoordinator
 from custom_components.vigil.detection.engines.engine2_unavailability import is_offline
+from custom_components.vigil.detection.inputs import build_device_tuples
 from custom_components.vigil.learning.interval_learner import IntervalLearner
 from custom_components.vigil.models import IssueKind
 from tests.helpers import NO_EXCLUSIONS, _add_connectivity, _entry, _settle

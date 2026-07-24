@@ -15,13 +15,13 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.vigil import VigilEntryData
 from custom_components.vigil.const import DOMAIN
 from custom_components.vigil.http_api import VigilStateView
-from custom_components.vigil.reporting.serialize import serialize_vigil_data
 from custom_components.vigil.models import (
     IntegrationHealthRow,
     IssueKind,
     VigilData,
     VigilIssue,
 )
+from custom_components.vigil.reporting.serialize import serialize_vigil_data
 
 LAST_RUN = datetime(2026, 6, 26, 12, 0, 0, tzinfo=UTC)
 

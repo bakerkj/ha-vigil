@@ -12,13 +12,10 @@ separate HA ``.storage`` file. A subclass supplies only its (de)serialization.
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from typing import Any, Generic, Protocol, TypeVar
+from typing import Any, Protocol
 
 from homeassistant.core import HomeAssistant
 from pydantic import BaseModel, ValidationError
-
-T = TypeVar("T")
-M = TypeVar("M", bound=BaseModel)
 
 _UNSET: Any = object()
 
@@ -28,7 +25,7 @@ def dump_model_map(models: Mapping[str, BaseModel]) -> dict[str, Any]:
     return {key: model.model_dump(mode="json") for key, model in models.items()}
 
 
-def load_model_map(
+def load_model_map[M: BaseModel](
     model: type[M], data: Any, *, keep: Callable[[M], bool] | None = None
 ) -> dict[str, M]:
     """Rebuild a ``dict[str, model]`` from persisted JSON, skipping any row that
@@ -54,7 +51,7 @@ class StateStore(Protocol):
     async def async_save_state(self, key: str, value: Any) -> bool: ...
 
 
-class StoreRepo(Generic[T]):
+class StoreRepo[T]:
     """A single in-memory value persisted as a JSON blob under ``key``.
 
     ``deserialize`` MUST tolerate a missing/corrupt payload (return the empty

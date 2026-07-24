@@ -73,7 +73,7 @@ def build_device_tuples(
             device_tuple = _build_one_tuple(
                 hass, device, ent_reg, mac_index, exclusions, ignore_connectivity
             )
-        except Exception:  # noqa: BLE001 — one bad device must not blank the cycle
+        except Exception:  # one bad device must not blank the cycle
             _LOGGER.exception("Vigil: failed to assess device %s", device.id)
             continue
         if device_tuple is not None:

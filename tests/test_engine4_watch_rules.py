@@ -17,14 +17,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.vigil.detection.inputs import build_device_tuples
 from custom_components.vigil.const import VIGIL_CONFIG_FILE, WATCH_RULES_FILE
-from custom_components.vigil.models import (
-    DeviceTuple,
-    FaultPhase,
-    IssueKind,
-    VigilIssue,
-)
 from custom_components.vigil.detection.engines.engine4_watch_rules import (
     detect_watch_issues,
 )
@@ -35,6 +28,13 @@ from custom_components.vigil.detection.engines.watch_config import (
     parse_ignore_rules,
     parse_vigil_config,
     parse_watch_rules,
+)
+from custom_components.vigil.detection.inputs import build_device_tuples
+from custom_components.vigil.models import (
+    DeviceTuple,
+    FaultPhase,
+    IssueKind,
+    VigilIssue,
 )
 from tests.helpers import NO_EXCLUSIONS
 

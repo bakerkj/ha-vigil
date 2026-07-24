@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -24,7 +24,6 @@ from custom_components.vigil.models import (
 
 _History = dict[str, AppHealthRecord]
 
-UTC = timezone.utc
 NOW = datetime(2026, 7, 10, 12, 0, tzinfo=UTC)
 
 
