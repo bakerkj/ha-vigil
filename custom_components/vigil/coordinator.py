@@ -33,7 +33,6 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
-from .detection.inputs import build_device_tuples
 from .const import (
     CONF_BATTERY_GRACE_MULTIPLIER,
     CONF_ENABLE_APP_MONITORING,
@@ -59,6 +58,7 @@ from .const import (
     RECORDER_LOOKBACK_DAYS,
     merged_options,
 )
+from .context import CycleContext
 from .detection.engines.engine2_unavailability import (
     DowntimeRepo,
     async_seed_downtime,
@@ -66,15 +66,15 @@ from .detection.engines.engine2_unavailability import (
 )
 from .detection.engines.engine5_apps import AppHealthRepo, async_app_snapshot
 from .detection.engines.watch_config import RuleFaultRepo, VigilConfigStore
-from .context import CycleContext
+from .detection.inputs import build_device_tuples
 from .history.recorder import async_recorder_interval_aggregate
-from .pipeline import run_detection
 from .models import (
     AppInfo,
     DowntimeRecord,
     ExclusionConfig,
     VigilData,
 )
+from .pipeline import run_detection
 from .reporting.acknowledgement import AckRepo
 from .reporting.notification import Notifier
 from .storage import StoreRepo
@@ -390,7 +390,7 @@ class VigilCoordinator(DataUpdateCoordinator[VigilData]):
             buckets, last_good = await async_recorder_interval_aggregate(
                 self.hass, entity_ids, start, now
             )
-        except Exception:  # noqa: BLE001 - recorder seed is best-effort
+        except Exception:  # recorder seed is best-effort
             _LOGGER.warning(
                 "Vigil: interval learner %s from recorder failed; warming up live "
                 "and retrying next start",

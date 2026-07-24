@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from homeassistant.core import HomeAssistant
 
@@ -12,7 +12,6 @@ from custom_components.vigil.learning.interval_learner import IntervalLearner
 from custom_components.vigil.persistence import FlushSet, LoadedState
 from tests.helpers import seed_learner
 
-UTC = timezone.utc
 ENTITY = "binary_sensor.motion"
 
 

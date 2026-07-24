@@ -30,7 +30,7 @@ from pydantic import TypeAdapter
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))  # so `custom_components` imports when run as a script
 
-from custom_components.vigil.models import VigilStateDict  # noqa: E402
+from custom_components.vigil.models import VigilStateDict
 
 _OUT = _ROOT / "custom_components/vigil/frontend/vigil-api.generated.d.ts"
 _JSON2TS = _ROOT / "node_modules/.bin/json2ts"

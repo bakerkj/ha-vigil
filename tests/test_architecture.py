@@ -171,9 +171,10 @@ def test_subsystems_never_import_the_coordinator() -> None:
     offenders: list[str] = []
     for path in _all_modules():
         own = _own_subpackage(path)
-        if own in SUBSYSTEMS or own == "pipeline":
-            if "coordinator" in _internal_targets(path):
-                offenders.append(str(path.relative_to(PKG_ROOT)))
+        if (own in SUBSYSTEMS or own == "pipeline") and "coordinator" in (
+            _internal_targets(path)
+        ):
+            offenders.append(str(path.relative_to(PKG_ROOT)))
     assert not offenders, f"these import the coordinator but must not: {offenders}"
 
 
@@ -182,9 +183,10 @@ def test_reporting_does_not_import_detection() -> None:
     ExclusionConfig it needs lives in the models leaf)."""
     offenders: list[str] = []
     for path in _all_modules():
-        if _own_subpackage(path) == "reporting":
-            if "detection" in _internal_targets(path):
-                offenders.append(str(path.relative_to(PKG_ROOT)))
+        if _own_subpackage(path) == "reporting" and "detection" in _internal_targets(
+            path
+        ):
+            offenders.append(str(path.relative_to(PKG_ROOT)))
     assert not offenders, f"reporting must not import detection: {offenders}"
 
 

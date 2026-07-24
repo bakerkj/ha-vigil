@@ -29,7 +29,7 @@ import logging
 import os
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, TypeVar
+from typing import Any
 
 import voluptuous as vol
 from homeassistant.core import HomeAssistant, State
@@ -43,8 +43,6 @@ from ...selectors import EntitySelector
 from ...storage import StateStore, StoreRepo, dump_model_map, load_model_map
 
 _LOGGER = logging.getLogger(__name__)
-
-_T = TypeVar("_T")
 
 _MATCH_KEYS = ("entity_id_glob", "entity_id_suffix", "device_class", "translation_key")
 
@@ -166,15 +164,15 @@ def _rule_label(entry: Any) -> str:
     return "unnamed"
 
 
-def _parse_rule_list(
+def _parse_rule_list[T](
     raw: Any,
     *,
     schema: vol.Schema,
-    build: Callable[[dict[str, Any]], _T],
+    build: Callable[[dict[str, Any]], T],
     kind: str,
     not_list_msg: str,
     with_label: bool = False,
-) -> list[_T]:
+) -> list[T]:
     """Shared validation skeleton for the watch/ignore rule parsers.
 
     Each entry is validated independently: a malformed entry is logged and skipped
@@ -187,7 +185,7 @@ def _parse_rule_list(
         return []
     if not isinstance(raw, list):
         raise vol.Invalid(not_list_msg.format(got=type(raw).__name__))
-    items: list[_T] = []
+    items: list[T] = []
     errors = 0
     for index, entry in enumerate(raw):
         try:

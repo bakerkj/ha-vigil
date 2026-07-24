@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 import pytest
@@ -534,7 +534,6 @@ def test_frigate_duration_comes_from_offline_since_not_recorder() -> None:
     ``offline_since`` (= the first earlier blip), used by Engine 2 whenever the
     recorder seed didn't resolve the device that cycle (recorder not loaded yet).
     """
-    UTC = timezone.utc
     day = datetime(2026, 6, 26, 0, 0, 0, tzinfo=UTC)
     boot = day + timedelta(hours=22)
     now = boot + timedelta(minutes=13)
