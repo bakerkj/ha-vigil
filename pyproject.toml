@@ -17,7 +17,7 @@ dev = [
   "mypy>=2.1.0",
   # Pin ruff to the same series the pre-commit hook uses (see .pre-commit-config)
   # so `uv run ruff` and the hook enforce identically instead of diverging.
-  "ruff==0.15.*",
+  "ruff==0.16.*",
   # Dev-only: scripts/gen_frontend_types.py introspects the wire TypedDicts into
   # JSON Schema. Not a runtime dependency of the integration (manifest stays []).
   "pydantic>=2.13",
