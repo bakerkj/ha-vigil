@@ -12,7 +12,7 @@ copies genuinely diverge (different option handling per suite).
 from __future__ import annotations
 
 from collections.abc import Iterable
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from freezegun.api import FrozenDateTimeFactory
@@ -77,7 +77,7 @@ def seed_learner(
 ) -> None:
     """Seed the learner with a `gap_seconds` longest-gap bucket on each of `days`
     consecutive days, via the public ingest() seam (not private attributes)."""
-    epoch = epoch or datetime(2026, 6, 1, tzinfo=timezone.utc)
+    epoch = epoch or datetime(2026, 6, 1, tzinfo=UTC)
     buckets = {
         (entity_id, (epoch + timedelta(days=d)).toordinal()): gap_seconds
         for d in range(days)

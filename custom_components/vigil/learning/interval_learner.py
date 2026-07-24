@@ -6,7 +6,7 @@ from __future__ import annotations
 import asyncio
 import math
 from collections.abc import Mapping
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from types import MappingProxyType
 
 from homeassistant.core import HomeAssistant
@@ -109,8 +109,8 @@ class IntervalLearner:
             lo, hi = spans.get(eid, (day, day))
             spans[eid] = (min(lo, day), max(hi, day))
         for eid, (lo, hi) in spans.items():
-            first = datetime.fromordinal(lo).replace(tzinfo=timezone.utc)
-            last = datetime.fromordinal(hi).replace(tzinfo=timezone.utc)
+            first = datetime.fromordinal(lo).replace(tzinfo=UTC)
+            last = datetime.fromordinal(hi).replace(tzinfo=UTC)
             # Prefer the true last-good report time over midnight of the last
             # scanned day, so the first live observe doesn't fold a spuriously
             # large gap into today's bucket.

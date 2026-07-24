@@ -21,7 +21,7 @@ import json
 import logging
 import os
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, TypeVar, cast
 
 from homeassistant.core import HomeAssistant
@@ -88,7 +88,7 @@ def _parse_dt(value: Any) -> datetime | None:
     parsed = dt_util.parse_datetime(value)
     if parsed is None:
         return None
-    return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=timezone.utc)
+    return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=UTC)
 
 
 def _kv_table(name: str) -> Table:
@@ -203,14 +203,14 @@ class SQLAlchemyIntervalStore:
         """
         try:
             return await self._hass.async_add_executor_job(fn, *args)
-        except Exception:  # noqa: BLE001 - best-effort; swallow and return sentinel
+        except Exception:  # best-effort; swallow and return sentinel
             _LOGGER.warning(warn, *warn_args, self._target(), exc_info=True)
             return fail_value
 
     async def async_load(self) -> LoadedState:
         try:
             return await self._hass.async_add_executor_job(self._load)
-        except Exception as err:  # noqa: BLE001 - any load failure must surface
+        except Exception as err:  # any load failure must surface
             # as IntervalStoreError so setup retries, never a silent empty state.
             raise IntervalStoreError(
                 f"interval store load from {self._target()} failed"

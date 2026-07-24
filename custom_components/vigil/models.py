@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Annotated, Any, TypedDict
 
@@ -138,9 +138,7 @@ def config_entry_is_reportable(entry: ConfigEntry, exclusions: ExclusionConfig) 
         return False
     if entry.source == SOURCE_IGNORE:
         return False
-    if entry.domain in exclusions.integrations:
-        return False
-    return True
+    return entry.domain not in exclusions.integrations
 
 
 def is_device_excluded(
@@ -269,7 +267,7 @@ def ensure_aware(value: datetime) -> datetime:
     this only fires on an externally-written or legacy naive persisted row — and
     it keeps that row from crashing later tz-aware arithmetic (``aware - naive``
     raises ``TypeError``, which would fail a whole detection cycle)."""
-    return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
+    return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
 
 
 # A pydantic datetime field that is coerced to tz-aware UTC on validation, so a

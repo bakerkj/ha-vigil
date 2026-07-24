@@ -20,8 +20,7 @@ from custom_components.vigil.detection.inputs import (
     _primary_config_entry,
     build_device_tuples,
 )
-from custom_components.vigil.models import ConnectivityState
-from custom_components.vigil.models import ExclusionConfig
+from custom_components.vigil.models import ConnectivityState, ExclusionConfig
 from custom_components.vigil.selectors import EntitySelector
 from tests.helpers import (
     NO_EXCLUSIONS,
@@ -39,7 +38,7 @@ def _ignore_platforms(*platforms: str) -> ExclusionConfig:
 
 async def test_all_unavailable_device(hass: HomeAssistant) -> None:
     """A device whose only entities are unavailable yields all_unavailable."""
-    entry, ent_reg, device = _demo_device(hass, "d1")
+    _entry, ent_reg, device = _demo_device(hass, "d1")
     ent = ent_reg.async_get_or_create("sensor", "demo", "u1", device_id=device.id)
     hass.states.async_set(ent.entity_id, "unavailable")
 
@@ -56,7 +55,7 @@ async def test_all_unavailable_device(hass: HomeAssistant) -> None:
 
 async def test_connectivity_binary_sensor_up(hass: HomeAssistant) -> None:
     """A same-device connectivity binary_sensor 'on' resolves to UP (P1)."""
-    entry, ent_reg, device = _demo_device(hass, "d2")
+    _entry, ent_reg, device = _demo_device(hass, "d2")
     sensor = ent_reg.async_get_or_create("sensor", "demo", "v1", device_id=device.id)
     conn = _add_connectivity(ent_reg, device, "conn1")
     hass.states.async_set(sensor.entity_id, "23")
@@ -71,7 +70,7 @@ async def test_connectivity_binary_sensor_up(hass: HomeAssistant) -> None:
 async def test_user_device_class_override_wins(hass: HomeAssistant) -> None:
     """A user's device_class override takes precedence over the integration's
     original (HA convention): overriding to 'connectivity' makes it a signal."""
-    entry, ent_reg, device = _demo_device(hass, "dcov")
+    _entry, ent_reg, device = _demo_device(hass, "dcov")
     bs = ent_reg.async_get_or_create(
         "binary_sensor",
         "demo",
@@ -139,7 +138,7 @@ async def test_ignore_connectivity_drops_lone_signal_to_unknown(
 ) -> None:
     """When the ignored sensor is the ONLY connectivity signal, the device loses
     that signal entirely (resolves UNKNOWN), proving the rule removes it."""
-    entry, ent_reg, device = _demo_device(hass, "lone")
+    _entry, ent_reg, device = _demo_device(hass, "lone")
     data = ent_reg.async_get_or_create("sensor", "demo", "v", device_id=device.id)
     conn = _add_connectivity(ent_reg, device, "conn")
     hass.states.async_set(data.entity_id, "5")
@@ -155,7 +154,7 @@ async def test_ignore_connectivity_drops_lone_signal_to_unknown(
 async def test_user_override_removes_connectivity_class(hass: HomeAssistant) -> None:
     """Overriding an original 'connectivity' class to something else stops the
     entity being treated as a connectivity signal (the user's intent wins)."""
-    entry, ent_reg, device = _demo_device(hass, "dcov2")
+    _entry, ent_reg, device = _demo_device(hass, "dcov2")
     bs = _add_connectivity(ent_reg, device, "dcov2_bs")
     ent_reg.async_update_entity(bs.entity_id, device_class="problem")  # override away
     hass.states.async_set(bs.entity_id, "on")
@@ -167,7 +166,7 @@ async def test_user_override_removes_connectivity_class(hass: HomeAssistant) -> 
 
 async def test_excluded_device_skipped(hass: HomeAssistant) -> None:
     """A device on the exclusion list produces no tuple."""
-    entry, ent_reg, device = _demo_device(hass, "d3")
+    _entry, ent_reg, device = _demo_device(hass, "d3")
     ent = ent_reg.async_get_or_create("sensor", "demo", "w1", device_id=device.id)
     hass.states.async_set(ent.entity_id, "5")
 
@@ -177,7 +176,7 @@ async def test_excluded_device_skipped(hass: HomeAssistant) -> None:
 
 async def test_unknown_entity_does_not_mask_unavailable(hass: HomeAssistant) -> None:
     """A stuck-`unknown` entity must not block all_unavailable for the device."""
-    entry, ent_reg, device = _demo_device(hass, "mix1")
+    _entry, ent_reg, device = _demo_device(hass, "mix1")
     gone = ent_reg.async_get_or_create("sensor", "demo", "mix1_a", device_id=device.id)
     stuck = ent_reg.async_get_or_create("sensor", "demo", "mix1_b", device_id=device.id)
     hass.states.async_set(gone.entity_id, "unavailable")
@@ -198,7 +197,7 @@ async def test_all_unknown_device_is_not_reporting(
     unknown_at = dt_util.utcnow()
     freezer.move_to(unknown_at)
 
-    entry, ent_reg, device = _demo_device(hass, "unk1")
+    _entry, ent_reg, device = _demo_device(hass, "unk1")
     e = ent_reg.async_get_or_create("sensor", "demo", "unk1_a", device_id=device.id)
     hass.states.async_set(e.entity_id, "unknown")
 
@@ -215,7 +214,7 @@ async def test_up_connectivity_vetoes_all_unknown_offline(
     """A reachable device (connectivity 'on') with a data sensor stuck 'unknown'
     (never produced a first value, nothing actually unavailable) must not be
     flagged offline — the positive UP signal vetoes it."""
-    entry, ent_reg, device = _demo_device(hass, "upunk")
+    _entry, ent_reg, device = _demo_device(hass, "upunk")
     data = ent_reg.async_get_or_create("sensor", "demo", "upunk_a", device_id=device.id)
     conn = _add_connectivity(ent_reg, device, "upunk_conn")
     hass.states.async_set(data.entity_id, "unknown")  # never produced a value
@@ -231,7 +230,7 @@ async def test_up_connectivity_still_offline_when_data_unavailable(
 ) -> None:
     """The UP veto only spares an all-unknown set: a data entity that actually goes
     unavailable while connectivity reads 'on' still counts as down."""
-    entry, ent_reg, device = _demo_device(hass, "upunavail")
+    _entry, ent_reg, device = _demo_device(hass, "upunavail")
     data = ent_reg.async_get_or_create(
         "sensor", "demo", "upunavail_a", device_id=device.id
     )
@@ -246,7 +245,7 @@ async def test_up_connectivity_still_offline_when_data_unavailable(
 
 async def test_update_entity_excluded_from_availability(hass: HomeAssistant) -> None:
     """An always-available `update` entity must not mask an offline device."""
-    entry, ent_reg, device = _demo_device(hass, "esp1")
+    _entry, ent_reg, device = _demo_device(hass, "esp1")
     data = ent_reg.async_get_or_create(
         "sensor", "demo", "esp1_lux", device_id=device.id
     )
@@ -263,7 +262,7 @@ async def test_update_entity_excluded_from_availability(hass: HomeAssistant) -> 
 async def test_annotation_platform_and_button_excluded(hass: HomeAssistant) -> None:
     """Configured annotation-platform entities + button must not mask an offline
     device (real plant-sensor / CPAP case)."""
-    entry, ent_reg, device = _demo_device(hass, "plant1")
+    _entry, ent_reg, device = _demo_device(hass, "plant1")
     moisture = ent_reg.async_get_or_create(
         "sensor", "demo", "plant1_moisture", device_id=device.id
     )
@@ -289,7 +288,7 @@ async def test_unconfigured_annotation_platform_is_not_ignored(
 ) -> None:
     """Annotation platforms are not built-in: with none configured, a lingering
     annotation_notes sensor still counts and keeps the device from all-unavailable."""
-    entry, ent_reg, device = _demo_device(hass, "plant3")
+    _entry, ent_reg, device = _demo_device(hass, "plant3")
     moisture = ent_reg.async_get_or_create(
         "sensor", "demo", "plant3_moisture", device_id=device.id
     )
@@ -339,7 +338,7 @@ async def test_diagnostic_sensor_still_counts_for_availability(
 ) -> None:
     """A genuine diagnostic sensor still reporting is NOT excluded — it keeps the
     device from reading fully unavailable (don't blanket-exclude diagnostics)."""
-    entry, ent_reg, device = _demo_device(hass, "plant2")
+    _entry, ent_reg, device = _demo_device(hass, "plant2")
     moisture = ent_reg.async_get_or_create(
         "sensor", "demo", "plant2_moisture", device_id=device.id
     )
@@ -361,7 +360,7 @@ async def test_diagnostic_sensor_still_counts_for_availability(
 
 async def test_battery_device_detected(hass: HomeAssistant) -> None:
     """A battery device_class entity (registry class) marks the device battery."""
-    entry, ent_reg, device = _demo_device(hass, "d4")
+    _entry, ent_reg, device = _demo_device(hass, "d4")
     batt = ent_reg.async_get_or_create(
         "sensor",
         "demo",
@@ -377,7 +376,7 @@ async def test_battery_device_detected(hass: HomeAssistant) -> None:
 
 async def test_battery_detected_via_state_attribute(hass: HomeAssistant) -> None:
     """A battery device_class in state attributes (no registry class) counts."""
-    entry, ent_reg, device = _demo_device(hass, "d5")
+    _entry, ent_reg, device = _demo_device(hass, "d5")
     ent = ent_reg.async_get_or_create("sensor", "demo", "ba1", device_id=device.id)
     hass.states.async_set(ent.entity_id, "55", {"device_class": "battery"})
 

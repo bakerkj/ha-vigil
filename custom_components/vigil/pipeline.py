@@ -81,7 +81,7 @@ async def run_detection(ctx: CycleContext) -> VigilData:
             fault_state=ctx.fault_state,
             now=ctx.now,
         )
-    except Exception:  # noqa: BLE001 - watch rules are user config; never fatal
+    except Exception:  # watch rules are user config; never fatal
         _LOGGER.exception(
             "Vigil: watch-rule evaluation failed; skipping device faults this cycle"
         )

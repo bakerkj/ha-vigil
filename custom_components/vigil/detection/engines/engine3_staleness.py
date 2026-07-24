@@ -92,9 +92,10 @@ def detect_staleness_issues(
                 _MIN_EXPECTED_INTERVAL,
             )
             expected_by_entity[s.entity_id] = expected
-            if learner.is_populated(s.entity_id):
-                if min_expected is None or expected < min_expected:
-                    min_expected = expected
+            if learner.is_populated(s.entity_id) and (
+                min_expected is None or expected < min_expected
+            ):
+                min_expected = expected
 
         for s in eligible:
             learner.observe(s.entity_id, s.last_reported or s.last_updated)

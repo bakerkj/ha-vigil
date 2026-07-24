@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC
 from pathlib import Path
 
 import pytest
@@ -14,10 +15,10 @@ from custom_components.vigil.const import (
     CONF_INTERVAL_STORE_URL,
     STORAGE_SQLITE_FILE,
 )
+from custom_components.vigil.persistence import create_interval_store
 from custom_components.vigil.persistence.sqlalchemy_backend import (
     SQLAlchemyIntervalStore,
 )
-from custom_components.vigil.persistence import create_interval_store
 
 
 def _url(tmp_path: Path) -> str:
@@ -113,12 +114,12 @@ async def test_existing_sqlite_file_round_trips_through_sqlalchemy(
 ) -> None:
     """An existing .storage/vigil_intervals.db (identical schema) keeps working:
     write via the SQLAlchemy backend, read it back on a fresh instance."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from custom_components.vigil.persistence import FlushSet
 
     url = f"sqlite:///{tmp_path / 'existing.db'}"
-    now = datetime(2026, 7, 1, tzinfo=timezone.utc)
+    now = datetime(2026, 7, 1, tzinfo=UTC)
     w = SQLAlchemyIntervalStore(hass, url)
     await w.async_load()
     await w.async_flush(
@@ -141,13 +142,13 @@ async def test_load_salvages_a_poison_daily_max_row(
     failing the whole load: a permanent corruption must not raise
     IntervalStoreError and retry setup forever — the rest of the store still loads."""
     import sqlite3
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from custom_components.vigil.persistence import FlushSet
 
     path = tmp_path / "poison.db"
     url = f"sqlite:///{path}"
-    now = datetime(2026, 7, 1, tzinfo=timezone.utc)
+    now = datetime(2026, 7, 1, tzinfo=UTC)
     w = SQLAlchemyIntervalStore(hass, url)
     await w.async_load()
     await w.async_flush(
@@ -184,13 +185,13 @@ async def test_load_salvages_poison_seen_and_watermark_rows(
     such row would fail the whole load and brick setup forever — the same class of
     bug the daily_max salvage fixed, for the other two tables."""
     import sqlite3
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from custom_components.vigil.persistence import FlushSet
 
     path = tmp_path / "poison_seen.db"
     url = f"sqlite:///{path}"
-    now = datetime(2026, 7, 1, tzinfo=timezone.utc)
+    now = datetime(2026, 7, 1, tzinfo=UTC)
     w = SQLAlchemyIntervalStore(hass, url)
     await w.async_load()
     await w.async_flush(
@@ -231,11 +232,11 @@ async def test_write_after_close_is_a_noop_not_a_resurrection(
 ) -> None:
     """A store op after async_close must NOT rebuild the engine — for the external
     backend that would leak a fresh pool. It no-ops via the best-effort path."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from custom_components.vigil.persistence import FlushSet
 
-    now = datetime(2026, 7, 1, tzinfo=timezone.utc)
+    now = datetime(2026, 7, 1, tzinfo=UTC)
     store = SQLAlchemyIntervalStore(hass, f"sqlite:///{tmp_path / 'closed.db'}")
     await store.async_load()
     await store.async_close()

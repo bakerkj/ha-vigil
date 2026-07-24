@@ -55,7 +55,7 @@ async def async_app_snapshot(hass: HomeAssistant) -> list[AppInfo] | None:
     client = get_supervisor_client(hass)
     try:
         installed = await client.addons.list()
-    except Exception:  # noqa: BLE001 - Supervisor blip must not break the cycle
+    except Exception:  # Supervisor blip must not break the cycle
         _LOGGER.warning(
             "Vigil: could not read the app list from Supervisor; keeping last "
             "known app-health state this cycle",
@@ -74,7 +74,7 @@ async def async_app_snapshot(hass: HomeAssistant) -> list[AppInfo] | None:
         try:
             info = await client.addons.addon_info(slug)
             return str(info.boot), str(info.startup)
-        except Exception:  # noqa: BLE001 - unknown; skip this app
+        except Exception:  # unknown; skip this app
             _LOGGER.debug("Vigil: app info for %s failed", slug, exc_info=True)
             return "", ""
 
