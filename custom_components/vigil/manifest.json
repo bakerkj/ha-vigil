@@ -23,5 +23,5 @@
     "pydantic>=2"
   ],
   "single_config_entry": true,
-  "version": "0.0.2"
+  "version": "0.0.3"
 }
