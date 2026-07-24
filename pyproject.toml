@@ -15,9 +15,6 @@ dev = [
   "pytest-homeassistant-custom-component>=0.13.323",
   "pytest-cov>=5",
   "mypy>=2.1.0",
-  # Pin ruff to the same series the pre-commit hook uses (see .pre-commit-config)
-  # so `uv run ruff` and the hook enforce identically instead of diverging.
-  "ruff==0.16.*",
   # Dev-only: scripts/gen_frontend_types.py introspects the wire TypedDicts into
   # JSON Schema. Not a runtime dependency of the integration (manifest stays []).
   "pydantic>=2.13",
@@ -45,8 +42,8 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 
-# Match the pre-commit ruff hook's assumptions so a direct `uv run ruff` agrees
-# with it (default rule set kept; this only pins the target version + width).
+# Read by the pre-commit ruff hook (the default rule set is kept; this only sets
+# the target version + line width).
 [tool.ruff]
 target-version = "py314"
 line-length = 88

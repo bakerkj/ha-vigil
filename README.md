@@ -253,7 +253,7 @@ uv sync                                    # create the venv
 uv run python -m pytest tests/             # tests
 uv run python -m pytest tests/ --cov=custom_components/vigil  # tests + coverage
 uv run mypy custom_components/vigil tests   # strict type-checking
-uv run ruff check custom_components tests   # lint (same ruff the hook pins)
+uvx prek run ruff-check --all-files         # lint (the ruff the hook pins)
 uvx prek run --all-files                    # lint / format / all hooks
 npm run gen:types                           # regenerate the frontend API types
 ```
