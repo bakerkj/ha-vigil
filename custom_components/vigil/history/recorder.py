@@ -17,10 +17,9 @@ to query, how to fold the results into its cross-cycle state), not the SQL.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from itertools import batched
 
-from sqlalchemy import bindparam, text
 from homeassistant.components.recorder import get_instance  # type: ignore[attr-defined]
 from homeassistant.components.recorder.db_schema import RecorderRuns
 from homeassistant.components.recorder.history import get_significant_states
@@ -30,6 +29,7 @@ from homeassistant.components.recorder.util import (  # type: ignore[attr-define
 )
 from homeassistant.core import HomeAssistant, State
 from homeassistant.util import dt as dt_util
+from sqlalchemy import bindparam, text
 
 from ..const import (
     RECORDER_ENTITY_CHUNK,
@@ -194,7 +194,7 @@ async def async_recorder_last_good(
                     ts = process_timestamp(raw_start)
                     if ts is not None and ts >= start - window:
                         run_starts.append(ts)
-        except Exception:  # noqa: BLE001 - run history is best-effort
+        except Exception:  # run history is best-effort
             run_history_ok = False
             _LOGGER.debug("Vigil: could not read recorder run history", exc_info=True)
         return history, run_starts, run_history_ok
@@ -203,7 +203,7 @@ async def async_recorder_last_good(
         history, run_starts, run_history_ok = await get_instance(
             hass
         ).async_add_executor_job(_query)
-    except Exception:  # noqa: BLE001 - a busy/unready recorder must not blank the cycle
+    except Exception:  # a busy/unready recorder must not blank the cycle
         # get_instance() or the history read can raise on a healthy-but-busy
         # recorder (DB locked, mid-purge/migration, disk full, not-yet-ready).
         # Degrade to "blind" for every queried device so Engine 2 falls back to
@@ -246,7 +246,7 @@ async def async_recorder_interval_aggregate(
     start_ts = start.timestamp()
     now_ts = now.timestamp()
     nonvalues = list(RECORDER_NON_VALUE_STATES)
-    day_offset = datetime(1970, 1, 1).toordinal()
+    day_offset = date(1970, 1, 1).toordinal()
     engine = get_instance(hass).engine
     dialect = engine.dialect.name if engine is not None else "sqlite"
     day_floor = (
@@ -266,8 +266,10 @@ async def async_recorder_interval_aggregate(
     # Bound the window at BOTH edges [start, now): the upper bound keeps a
     # clock-skewed / future-dated row out of a future day and honors the ``now``
     # the caller threads in for a consistent cycle view.
+    # The f-string interpolations below (``day_floor``, ``_STATES_WINDOW``) are
+    # module-local literals, never user input; every value is a bound parameter.
     gap_sql = text(
-        f"SELECT g.mid, {day_floor} AS day, MAX(g.gap) "  # noqa: S608 - interpolated fragments are literals, not user input
+        f"SELECT g.mid, {day_floor} AS day, MAX(g.gap) "
         "FROM (SELECT metadata_id AS mid, last_updated_ts AS ts, "
         "  last_updated_ts - LAG(last_updated_ts) OVER ("
         "    PARTITION BY metadata_id ORDER BY last_updated_ts) AS gap "
@@ -279,7 +281,7 @@ async def async_recorder_interval_aggregate(
         bindparam("nonvalues", expanding=True),
     )
     good_sql = text(
-        f"SELECT metadata_id, MAX(last_updated_ts) FROM states WHERE {_STATES_WINDOW} "  # noqa: S608 - interpolated fragment is a literal, not user input
+        f"SELECT metadata_id, MAX(last_updated_ts) FROM states WHERE {_STATES_WINDOW} "
         "GROUP BY metadata_id"
     ).bindparams(
         bindparam("mids", expanding=True),

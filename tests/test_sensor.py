@@ -10,13 +10,13 @@ from typing import cast
 
 import pytest
 
-from custom_components.vigil.reporting.serialize import serialize_vigil_data
 from custom_components.vigil.models import (
     IntegrationHealthRow,
     IssueKind,
     VigilData,
     VigilIssue,
 )
+from custom_components.vigil.reporting.serialize import serialize_vigil_data
 from custom_components.vigil.sensor import (
     SENSOR_DESCRIPTIONS,
     VigilSensor,

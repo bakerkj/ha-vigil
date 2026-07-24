@@ -12,8 +12,8 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.components import frontend
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import dt as dt_util
@@ -73,7 +73,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> boo
         # engine/pool the SQLAlchemy backend opened before the load raised.
         try:
             await learner.async_close()
-        except Exception:  # noqa: BLE001 — cleanup must not mask the load failure
+        except Exception:  # cleanup must not mask the load failure
             _LOGGER.exception("Vigil: interval store close after load failure failed")
         raise ConfigEntryNotReady(str(err)) from err
 
@@ -92,7 +92,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> boo
         # The card must not hold detection hostage to a frontend hiccup.
         try:
             await _async_register_frontend(hass)
-        except Exception:  # noqa: BLE001 — never let the card block detection
+        except Exception:  # never let the card block detection
             _LOGGER.exception("Vigil: failed to register dashboard card; continuing")
 
         entry.async_on_unload(entry.add_update_listener(async_reload_entry))
@@ -103,7 +103,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> boo
         coordinator.async_teardown()
         try:
             await learner.async_close()
-        except Exception:  # noqa: BLE001 — cleanup must not swallow the original error
+        except Exception:  # cleanup must not swallow the original error
             _LOGGER.exception("Vigil: interval store close after setup failure failed")
         raise
 
@@ -132,7 +132,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: VigilConfigEntry) -> bo
     for label, step in cleanup_steps:
         try:
             await step()
-        except Exception:  # noqa: BLE001 — cleanup is best-effort; never abort it
+        except Exception:  # cleanup is best-effort; never abort it
             _LOGGER.exception("Vigil: %s on unload failed", label)
     # The static path, HTTP view, and card resource persist for the process
     # lifetime; nothing per-entry to retract here.
@@ -217,7 +217,7 @@ async def _async_register_card_resource(hass: HomeAssistant) -> None:
             await resources.async_create_item({"res_type": "module", "url": url})
             _LOGGER.debug("Vigil: registered card as a Lovelace resource (%s)", url)
             return
-    except Exception:  # noqa: BLE001 — fall back; never block setup on this
+    except Exception:  # fall back; never block setup on this
         _LOGGER.exception(
             "Vigil: Lovelace resource registration failed; using extra-module URL"
         )
@@ -238,7 +238,7 @@ async def async_remove_entry(hass: HomeAssistant, _entry: ConfigEntry) -> None:
         for item in list(resources.async_items()):
             if _is_card_resource(item):
                 await resources.async_delete_item(item["id"])
-    except Exception:  # noqa: BLE001 — best-effort cleanup
+    except Exception:  # best-effort cleanup
         _LOGGER.debug("Vigil: could not remove card Lovelace resource", exc_info=True)
 
 

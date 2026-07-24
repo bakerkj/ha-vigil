@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import sqlite3
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -21,8 +21,6 @@ from custom_components.vigil.persistence import (
 from custom_components.vigil.persistence.sqlalchemy_backend import (
     SQLAlchemyIntervalStore,
 )
-
-UTC = timezone.utc
 
 StoreFactory = Callable[[], IntervalStoreProtocol]
 

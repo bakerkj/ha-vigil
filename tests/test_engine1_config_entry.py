@@ -15,8 +15,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.vigil.detection.engines.engine1_config_entry import (
     detect_config_entry_issues,
 )
-from custom_components.vigil.models import IssueKind
-from custom_components.vigil.models import ExclusionConfig
+from custom_components.vigil.models import ExclusionConfig, IssueKind
 
 EMPTY = ExclusionConfig(
     domains=frozenset(),
