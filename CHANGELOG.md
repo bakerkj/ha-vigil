@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.0.4](https://github.com/bakerkj/ha-vigil/compare/v0.0.3...v0.0.4) (2026-07-26)
+
+
+### Bug Fixes
+
+* use toml updater type for uv.lock in release-please ([006a578](https://github.com/bakerkj/ha-vigil/commit/006a57879b96c61d0a65ea85780c8817f492d406))
+* use toml updater type for uv.lock in release-please ([b5ea1bd](https://github.com/bakerkj/ha-vigil/commit/b5ea1bd60de64d296b97285ef48ddf236a67c7fe))
+
+
+### Miscellaneous Chores
+
+* **deps:** update anthropics/claude-code-action action to v1.0.183 ([e9e85bf](https://github.com/bakerkj/ha-vigil/commit/e9e85bffa88dfca0df0110cdeaa9b6bad1123389))
+* **deps:** update anthropics/claude-code-action action to v1.0.183 ([dd60ce3](https://github.com/bakerkj/ha-vigil/commit/dd60ce39c45cea5cd6e9d7b3993aef59606f0ee0))
+* **deps:** update dependency eslint to v10.8.0 ([50684e3](https://github.com/bakerkj/ha-vigil/commit/50684e3d2f586bacb0f66a779f35eb3b27e8b9d8))
+* **deps:** update dependency eslint to v10.8.0 ([89217dc](https://github.com/bakerkj/ha-vigil/commit/89217dcd6ca8d616d8e207a593708bdc88beaaf0))
+* drop the ruff dev dependency, matching the sibling ha-* repos ([540c08a](https://github.com/bakerkj/ha-vigil/commit/540c08ab4ef2c71e5f3806efa63caabd5d54c11b))
+* drop the ruff dev dependency, matching the sibling ha-* repos ([4c69459](https://github.com/bakerkj/ha-vigil/commit/4c694598318033896ea30743feb3fc076aa724bf))
+* track uv.lock version in release-please ([1cc21cc](https://github.com/bakerkj/ha-vigil/commit/1cc21cc7369bf9deb9e441dd8553ee042dffaf8c))
+* track uv.lock version in release-please ([f8d3cc3](https://github.com/bakerkj/ha-vigil/commit/f8d3cc33d9ecee897ac600d7899cfaeba0f7c878))
+
 ## [0.0.3](https://github.com/bakerkj/ha-vigil/compare/v0.0.2...v0.0.3) (2026-07-24)
 
 
