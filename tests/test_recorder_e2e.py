@@ -46,6 +46,19 @@ from tests.helpers import (
 )
 
 
+def _midday_utcnow() -> datetime:
+    """``utcnow()`` pinned to 12:00 UTC (same date, time-of-day zeroed to noon).
+
+    Tests that key day buckets on ``day.toordinal()`` build the anchor as
+    ``now - N days`` and record rows at sub-day offsets (e.g. ``day + 900s``).
+    The aggregate buckets each gap under the UTC *date* of the later row, so if
+    the real clock is within that offset of UTC midnight the offset row rolls
+    into the next date and the ``day.toordinal()`` lookup misses — a flake that
+    only fires in the final minutes of a UTC day. Noon gives a 12-hour margin.
+    """
+    return dt_util.utcnow().replace(hour=12, minute=0, second=0, microsecond=0)
+
+
 async def test_restore_at_restart_does_not_corrupt_downtime(
     recorder_mock: object,
     hass: HomeAssistant,
@@ -120,7 +133,7 @@ async def test_interval_learner_recorder_seed_e2e(
     freezer: FrozenDateTimeFactory,
 ) -> None:
     """The recorder aggregate returns correct per-day MAX gaps + last_good; ingest/flush/reload populates the learner."""
-    now = dt_util.utcnow()
+    now = _midday_utcnow()
     eid = "sensor.cadence_probe"
 
     # 3 UTC days of history; each day two reports 300s apart (intra-day gap 300),
@@ -170,7 +183,7 @@ async def test_recorder_gap_spans_unavailable_rows(
     freezer: FrozenDateTimeFactory,
 ) -> None:
     """A gap is measured good-to-good, not split by an intervening ``unavailable`` row."""
-    now = dt_util.utcnow()
+    now = _midday_utcnow()
     eid = "sensor.flappy_probe"
     day = now - timedelta(days=1)
 
