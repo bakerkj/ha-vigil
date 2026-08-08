@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.0.5](https://github.com/bakerkj/ha-vigil/compare/v0.0.4...v0.0.5) (2026-08-08)
+
+
+### Bug Fixes
+
+* import StaticPathConfig compatibly across HA 2026.7/2026.8 ([#42](https://github.com/bakerkj/ha-vigil/issues/42)) ([4b31656](https://github.com/bakerkj/ha-vigil/commit/4b31656493cd14b43e02ca3d7febc966b8789e23))
+* **pre-commit:** set default_stages so hooks skip commit-msg by default ([#39](https://github.com/bakerkj/ha-vigil/issues/39)) ([032dbe3](https://github.com/bakerkj/ha-vigil/commit/032dbe387dd0a6f3bd0374a9473273a92570e11f))
+
+
+### Miscellaneous Chores
+
+* **deps:** pin uv to 0.12.2 ([#38](https://github.com/bakerkj/ha-vigil/issues/38)) ([c8c2ee1](https://github.com/bakerkj/ha-vigil/commit/c8c2ee11b9bd913a6d13fa1002f611b1dcb0ce83))
+* **deps:** update anthropics/claude-code-action action to v1.0.184 ([#40](https://github.com/bakerkj/ha-vigil/issues/40)) ([ef55936](https://github.com/bakerkj/ha-vigil/commit/ef55936ac4edd0f09f8b552a110b941d93746049))
+* **deps:** update dependency globals to v17.8.0 ([4333a97](https://github.com/bakerkj/ha-vigil/commit/4333a97e86520fbf437be3f7203ffe8709727762))
+* **deps:** update dependency globals to v17.8.0 ([e6efbc3](https://github.com/bakerkj/ha-vigil/commit/e6efbc3c3ee4b034dc477a222c7ee0c8e621f89e))
+* **deps:** update dependency globals to v17.9.0 ([#36](https://github.com/bakerkj/ha-vigil/issues/36)) ([6989154](https://github.com/bakerkj/ha-vigil/commit/6989154014a32eeb836e37fae243d08d963bdd22))
+* **deps:** update dependency homeassistant to ==2026.8.* ([#41](https://github.com/bakerkj/ha-vigil/issues/41)) ([5d97c5a](https://github.com/bakerkj/ha-vigil/commit/5d97c5a2749ac64df6a4ca14ca8dcdf918bb509a))
+* **deps:** update dependency jsdom to v30 ([5d7b31d](https://github.com/bakerkj/ha-vigil/commit/5d7b31d8413a93b8a82bc070e3ef761c52ea158e))
+* **deps:** update dependency jsdom to v30 ([9a53a6f](https://github.com/bakerkj/ha-vigil/commit/9a53a6f31ee35360acf35488e58fd5824eaa97be))
+* **deps:** update dependency jsdom to v30.0.1 ([93b91b0](https://github.com/bakerkj/ha-vigil/commit/93b91b09fa4d8e279e6e5a7a11aa2dbceb4d2a9b))
+* **deps:** update dependency jsdom to v30.0.1 ([506367b](https://github.com/bakerkj/ha-vigil/commit/506367b4b5fca0be6269d481e0fec22500591c89))
+* **deps:** update dependency uv to ==0.12.* ([66af836](https://github.com/bakerkj/ha-vigil/commit/66af83639cc712e043c2c94bdaf53155fe0b06f7))
+* **deps:** update dependency uv to ==0.12.* ([49be76e](https://github.com/bakerkj/ha-vigil/commit/49be76e341fa8306e682166468709e48bc3d76fa))
+* **deps:** update home-assistant/actions digest to a7c616c ([#37](https://github.com/bakerkj/ha-vigil/issues/37)) ([83aee43](https://github.com/bakerkj/ha-vigil/commit/83aee4329e27ec0a8e5a14c5bed28ba43f0b7f00))
+* **deps:** update home-assistant/actions digest to ab22029 ([81e80a7](https://github.com/bakerkj/ha-vigil/commit/81e80a73245218698105c5e8ffa3a6a21f3516e0))
+* **deps:** update home-assistant/actions digest to ab22029 ([71f1625](https://github.com/bakerkj/ha-vigil/commit/71f162550e9c1452395af09df379561a567f1c5e))
+* **deps:** update j178/prek-action action to v3 ([11cb52d](https://github.com/bakerkj/ha-vigil/commit/11cb52dc2a40120e8cefe2f63ed5ed1d35dad133))
+* **deps:** update j178/prek-action action to v3 ([2f8bfe3](https://github.com/bakerkj/ha-vigil/commit/2f8bfe391b919b845f90474fadf980dff98ecd8a))
+* **deps:** update pre-commit hook astral-sh/ruff-pre-commit to v0.16.1 ([00cee1e](https://github.com/bakerkj/ha-vigil/commit/00cee1e869034bca1034e915051e11e76332725e))
+* **deps:** update pre-commit hook astral-sh/ruff-pre-commit to v0.16.1 ([b4e9438](https://github.com/bakerkj/ha-vigil/commit/b4e9438a1f8065ba44b21da6ef7a1ba4627f1c3e))
+
+
+### Tests
+
+* fix UTC-midnight flake in recorder aggregate tests ([bbcedd4](https://github.com/bakerkj/ha-vigil/commit/bbcedd45dceb01263566486199c305c28dc94891))
+* pin recorder aggregate tests off UTC midnight to kill a boundary flake ([9545cc5](https://github.com/bakerkj/ha-vigil/commit/9545cc5851eff384dc27e2704c879f44331d86de))
+
+
+### Continuous Integration
+
+* enable renovate auto-merge for CI-only updates ([#35](https://github.com/bakerkj/ha-vigil/issues/35)) ([62c20d8](https://github.com/bakerkj/ha-vigil/commit/62c20d8ee70eaa067dd9c94ac1097eff3d43c3a3))
+
 ## [0.0.4](https://github.com/bakerkj/ha-vigil/compare/v0.0.3...v0.0.4) (2026-07-26)
 
 
