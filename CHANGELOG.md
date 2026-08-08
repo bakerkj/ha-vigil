@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.6](https://github.com/bakerkj/ha-vigil/compare/v0.0.5...v0.0.6) (2026-08-08)
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency eslint to v10.8.1 ([#45](https://github.com/bakerkj/ha-vigil/issues/45)) ([29d74d8](https://github.com/bakerkj/ha-vigil/commit/29d74d81257dc3b895601e118d4df6d7b9a2e96c))
+* **deps:** update dependency uv to v0.12.3 ([#46](https://github.com/bakerkj/ha-vigil/issues/46)) ([a4a88b3](https://github.com/bakerkj/ha-vigil/commit/a4a88b3a33b7516539e714c603302136c3d04b5c))
+* **deps:** update pre-commit hook astral-sh/ruff-pre-commit to v0.16.2 ([#43](https://github.com/bakerkj/ha-vigil/issues/43)) ([96db997](https://github.com/bakerkj/ha-vigil/commit/96db9979b3fb4d85dc171fd13b2b80894cbda266))
+
 ## [0.0.5](https://github.com/bakerkj/ha-vigil/compare/v0.0.4...v0.0.5) (2026-08-08)
 
 
