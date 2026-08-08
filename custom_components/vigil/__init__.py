@@ -10,7 +10,14 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.components import frontend
-from homeassistant.components.http import StaticPathConfig
+
+# HA 2026.8 moved StaticPathConfig into http.server and only re-exports it from
+# the package, which mypy's strict no_implicit_reexport rejects; 2026.7 still
+# defines it here. Suppress attr-defined for 2026.8, and unused-ignore so the
+# suppression itself doesn't error on 2026.7.
+from homeassistant.components.http import (  # type: ignore[attr-defined, unused-ignore]
+    StaticPathConfig,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
