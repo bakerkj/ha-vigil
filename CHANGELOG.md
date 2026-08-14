@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.0.6](https://github.com/bakerkj/ha-vigil/compare/v0.0.5...v0.0.6) (2026-08-14)
+
+
+### Bug Fixes
+
+* resolve connectivity across devices split by HA 2026.8 ([#47](https://github.com/bakerkj/ha-vigil/issues/47)) ([6224c92](https://github.com/bakerkj/ha-vigil/commit/6224c92c9fd0ade6babca752505c6d88b67e470d))
+
+
+### Miscellaneous Chores
+
+* **deps:** update anthropics/claude-code-action action to v1.0.190 ([#53](https://github.com/bakerkj/ha-vigil/issues/53)) ([f5bc11a](https://github.com/bakerkj/ha-vigil/commit/f5bc11ac9fec014377a536d84977ef7f537019b8))
+* **deps:** update astral-sh/setup-uv action to v10 ([#49](https://github.com/bakerkj/ha-vigil/issues/49)) ([6b00bb6](https://github.com/bakerkj/ha-vigil/commit/6b00bb670308c40c3792e892590b6dd3becb718f))
+* **deps:** update dependency eslint to v10.8.1 ([#45](https://github.com/bakerkj/ha-vigil/issues/45)) ([29d74d8](https://github.com/bakerkj/ha-vigil/commit/29d74d81257dc3b895601e118d4df6d7b9a2e96c))
+* **deps:** update dependency globals to v17.11.0 ([#52](https://github.com/bakerkj/ha-vigil/issues/52)) ([2792973](https://github.com/bakerkj/ha-vigil/commit/27929735bc28888b37441bcedcfbec38403e3fd3))
+* **deps:** update dependency uv to v0.12.3 ([#46](https://github.com/bakerkj/ha-vigil/issues/46)) ([a4a88b3](https://github.com/bakerkj/ha-vigil/commit/a4a88b3a33b7516539e714c603302136c3d04b5c))
+* **deps:** update dependency uv to v0.12.4 ([#51](https://github.com/bakerkj/ha-vigil/issues/51)) ([8990d68](https://github.com/bakerkj/ha-vigil/commit/8990d68541b5df1ffc44aff6c8dd25889e710c11))
+* **deps:** update github-actions ([#54](https://github.com/bakerkj/ha-vigil/issues/54)) ([2f30782](https://github.com/bakerkj/ha-vigil/commit/2f307827a0820be0223e0c83408f9889e5b3c90c))
+* **deps:** update pre-commit hook astral-sh/ruff-pre-commit to v0.16.2 ([#43](https://github.com/bakerkj/ha-vigil/issues/43)) ([96db997](https://github.com/bakerkj/ha-vigil/commit/96db9979b3fb4d85dc171fd13b2b80894cbda266))
+* **deps:** update pre-commit hook astral-sh/ruff-pre-commit to v0.16.3 ([#50](https://github.com/bakerkj/ha-vigil/issues/50)) ([6a97412](https://github.com/bakerkj/ha-vigil/commit/6a97412c98a476880d1502a9d12339a0a94f0b5d))
+* **deps:** update pre-commit hook python-jsonschema/check-jsonschema to v0.38.0 ([#48](https://github.com/bakerkj/ha-vigil/issues/48)) ([df8ac44](https://github.com/bakerkj/ha-vigil/commit/df8ac4410dfbadb098c37d3d852390ad67d4b1dd))
+
 ## [0.0.5](https://github.com/bakerkj/ha-vigil/compare/v0.0.4...v0.0.5) (2026-08-08)
 
 
