@@ -15,6 +15,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+import custom_components.vigil.detection.inputs as conn_mod
 from custom_components.vigil.detection.engines.engine2_unavailability import is_offline
 from custom_components.vigil.detection.inputs import (
     _primary_config_entry,
@@ -700,6 +701,33 @@ async def test_one_bad_device_does_not_blank_the_cycle(
     ids = {t.device_id for t in build_device_tuples(hass, NO_EXCLUSIONS)}
     assert good.id in ids  # the healthy device survives the bad one
     assert bad.id not in ids
+
+
+async def test_identifiers_that_are_not_pairs(hass: HomeAssistant) -> None:
+    """Identifiers are typed ``tuple[str, str]`` but real registries hold other
+    shapes — homekit writes 3-tuples, weatherflow_forecast a 1-tuple. Indexing
+    must survive them, and a 3-tuple must still pair on its first two elements."""
+    entry = _entry(hass, "demo", "Demo")
+    dev_reg = dr.async_get(hass)
+    ent_reg = er.async_get(hass)
+    for slug, ident in (
+        ("triple", ("homekit", "5165e386", "homekit.bridge")),
+        ("single", ("weatherflow_forecast",)),
+        ("empty", ()),
+    ):
+        device = dev_reg.async_get_or_create(
+            config_entry_id=entry.entry_id,
+            identifiers={ident, ("demo", slug)},  # type: ignore[arg-type]
+        )
+        e = ent_reg.async_get_or_create("sensor", "demo", slug, device_id=device.id)
+        hass.states.async_set(e.entity_id, "1")
+
+    tuples = build_device_tuples(hass, NO_EXCLUSIONS)
+    assert len(tuples) == 3  # none of the three was dropped
+
+    index = conn_mod._build_device_key_index(dev_reg)
+    assert ("id", "homekit", "5165e386") in index  # 3-tuple pairs on its first two
+    assert not any(k[1] == "weatherflow_forecast" for k in index)  # too short to pair
 
 
 # ---------------------------------------------------------------------------

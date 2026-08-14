@@ -175,6 +175,20 @@ def _build_one_tuple(
 
 
 @callback
+def _identifier_keys(device: DeviceEntry) -> list[tuple[str, str, str]]:
+    """``("id", domain, ident)`` for each of ``device``'s identifiers.
+
+    Typed ``tuple[str, str]``, but nothing enforces that and real registries
+    hold other shapes — homekit writes 3-tuples, weatherflow_forecast a
+    1-tuple. Pair on the first two elements; anything shorter cannot pair and
+    is skipped.
+    """
+    return [
+        ("id", ident[0], ident[1]) for ident in device.identifiers if len(ident) >= 2
+    ]
+
+
+@callback
 def _build_device_key_index(
     dev_reg: dr.DeviceRegistry,
 ) -> dict[tuple[str, str, str], list[DeviceEntry]]:
@@ -191,8 +205,8 @@ def _build_device_key_index(
         for conn_type, value in device.connections:
             if conn_type == dr.CONNECTION_NETWORK_MAC:
                 index.setdefault(("mac", value, ""), []).append(device)
-        for domain, ident in device.identifiers:
-            index.setdefault(("id", domain, ident), []).append(device)
+        for key in _identifier_keys(device):
+            index.setdefault(key, []).append(device)
     return index
 
 
@@ -207,7 +221,7 @@ def _device_keys(
         if conn_type == dr.CONNECTION_NETWORK_MAC
     ]
     if not macs_only:
-        keys += [("id", domain, ident) for domain, ident in device.identifiers]
+        keys += _identifier_keys(device)
     return keys
 
 
