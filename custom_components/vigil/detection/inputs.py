@@ -65,13 +65,13 @@ def build_device_tuples(
     """
     dev_reg = dr.async_get(hass)
     ent_reg = er.async_get(hass)
-    mac_index = _build_mac_index(dev_reg)
+    key_index = _build_device_key_index(dev_reg)
 
     tuples: list[DeviceTuple] = []
     for device in dev_reg.devices.values():
         try:
             device_tuple = _build_one_tuple(
-                hass, device, ent_reg, mac_index, exclusions, ignore_connectivity
+                hass, device, ent_reg, key_index, exclusions, ignore_connectivity
             )
         except Exception:  # one bad device must not blank the cycle
             _LOGGER.exception("Vigil: failed to assess device %s", device.id)
@@ -86,7 +86,7 @@ def _build_one_tuple(
     hass: HomeAssistant,
     device: DeviceEntry,
     ent_reg: er.EntityRegistry,
-    mac_index: dict[str, list[DeviceEntry]],
+    key_index: dict[tuple[str, str, str], list[DeviceEntry]],
     exclusions: ExclusionConfig,
     ignore_connectivity: Sequence[EntitySelector],
 ) -> DeviceTuple | None:
@@ -118,7 +118,7 @@ def _build_one_tuple(
         return None
 
     connectivity_state, source = _resolve_connectivity(
-        hass, device, reg_entries, ent_reg, mac_index, ignore_connectivity
+        hass, device, reg_entries, ent_reg, key_index, ignore_connectivity, exclusions
     )
 
     # Availability is judged over the device's own telemetry, excluding the
@@ -175,14 +175,54 @@ def _build_one_tuple(
 
 
 @callback
-def _build_mac_index(dev_reg: dr.DeviceRegistry) -> dict[str, list[DeviceEntry]]:
-    """Map each MAC to the devices that advertise it (brief priority 4-6)."""
-    index: dict[str, list[DeviceEntry]] = {}
+def _identifier_keys(device: DeviceEntry) -> list[tuple[str, str, str]]:
+    """``("id", domain, ident)`` for each of ``device``'s identifiers.
+
+    Typed ``tuple[str, str]``, but nothing enforces that and real registries
+    hold other shapes — homekit writes 3-tuples, weatherflow_forecast a
+    1-tuple. Pair on the first two elements; anything shorter cannot pair and
+    is skipped.
+    """
+    return [
+        ("id", ident[0], ident[1]) for ident in device.identifiers if len(ident) >= 2
+    ]
+
+
+@callback
+def _build_device_key_index(
+    dev_reg: dr.DeviceRegistry,
+) -> dict[tuple[str, str, str], list[DeviceEntry]]:
+    """Map each registry key to the devices carrying it.
+
+    Keys are the two things the device registry itself matches devices on: a
+    connection (``("mac", <addr>, "")``) and an identifier
+    (``("id", <domain>, <ident>)``). Tagged by kind so callers can ask for one
+    or both — the router-tracker path wants MACs only, while rejoining the
+    halves of a split device wants either.
+    """
+    index: dict[tuple[str, str, str], list[DeviceEntry]] = {}
     for device in dev_reg.devices.values():
         for conn_type, value in device.connections:
             if conn_type == dr.CONNECTION_NETWORK_MAC:
-                index.setdefault(value, []).append(device)
+                index.setdefault(("mac", value, ""), []).append(device)
+        for key in _identifier_keys(device):
+            index.setdefault(key, []).append(device)
     return index
+
+
+@callback
+def _device_keys(
+    device: DeviceEntry, *, macs_only: bool = False
+) -> list[tuple[str, str, str]]:
+    """The index keys ``device`` carries, in the same shape as the index."""
+    keys = [
+        ("mac", value, "")
+        for conn_type, value in device.connections
+        if conn_type == dr.CONNECTION_NETWORK_MAC
+    ]
+    if not macs_only:
+        keys += _identifier_keys(device)
+    return keys
 
 
 def _primary_config_entry(
@@ -295,31 +335,112 @@ def _resolve_connectivity(
     device: DeviceEntry,
     reg_entries: list[RegistryEntry],
     ent_reg: er.EntityRegistry,
-    mac_index: dict[str, list[DeviceEntry]],
+    key_index: dict[tuple[str, str, str], list[DeviceEntry]],
     ignore_connectivity: Sequence[EntitySelector],
+    exclusions: ExclusionConfig,
 ) -> tuple[ConnectivityState, str]:
     """Resolve a device's reachability via the brief's priority ladder."""
+    # P1/P2 look at the device's own entities plus those of its split siblings —
+    # see _same_device_entries.
+    entries = _same_device_entries(device, reg_entries, ent_reg, key_index, exclusions)
     # Entities a vigil.yaml ignore rule marks as NOT a connectivity signal (e.g. a
     # mislabeled device_class=connectivity sensor) — skipped by P1/P2 below.
-    ignored = _ignored_connectivity_ids(hass, reg_entries, ignore_connectivity)
+    ignored = _ignored_connectivity_ids(hass, entries, ignore_connectivity)
 
     # Priority 1 — same-device connectivity binary_sensor (zero-config).
-    result = _from_connectivity_binary_sensor(hass, reg_entries, ignored)
+    result = _from_connectivity_binary_sensor(hass, entries, ignored)
     if result is not None:
         return result
 
     # Priority 2 — protocol-native status entity (zwave_js node_status).
-    result = _from_zwave_node_status(hass, reg_entries, ignored)
+    result = _from_zwave_node_status(hass, entries, ignored)
     if result is not None:
         return result
 
     # Priorities 4-6 — MAC correlation to a router/switch/scanner device_tracker.
-    result = _from_mac_tracker(hass, device, ent_reg, mac_index)
+    result = _from_mac_tracker(hass, device, ent_reg, key_index)
     if result is not None:
         return result
 
     # Priority 8 — no signal found.
     return ConnectivityState.UNKNOWN, "none"
+
+
+def _same_device_entries(
+    device: DeviceEntry,
+    reg_entries: list[RegistryEntry],
+    ent_reg: er.EntityRegistry,
+    key_index: dict[tuple[str, str, str], list[DeviceEntry]],
+    exclusions: ExclusionConfig,
+) -> list[RegistryEntry]:
+    """The device's own entities, followed by those of its split siblings.
+
+    A device is one config entry's view of a physical thing. Before HA 2026.8
+    the registry merged those views, so a monitoring integration's ping
+    binary_sensor landed on the same device as the telemetry it watches. 2026.8
+    gives each integration its own device, splitting the pair apart.
+
+    Rejoining them keeps P1/P2 seeing the signals they saw pre-split. Without
+    it, a device whose telemetry has gone quiet loses the proof it is still
+    reachable, and Vigil reports an outage that isn't happening.
+
+    Siblings are found by shared identifier *or* connection, which is complete
+    by construction: those are the only two keys ``async_get_or_create`` ever
+    merged on, so an integration whose signal used to sit on this device must
+    publish one of them. Matching both therefore rejoins exactly the set that
+    used to merge, whatever those integrations do next. Matching only on MAC
+    would miss every device whose integrations publish no MAC — locally that is
+    UPSs, switches, printers and similar, where the monitor copies the target's
+    identifiers but there is no hardware address to share.
+
+    Both keys are safe for the same reason: pre-split the registry enforces
+    global uniqueness on each, so two devices sharing one are necessarily halves
+    of a single physical device.
+
+    This is deliberately *not* keyed on ``composite_device_id`` (the split
+    marker HA stamps during migration): that only covers devices which existed
+    at migration time, so a device paired with a monitor afterwards would never
+    match, and HA drops the field about a year on. Identifiers and connections
+    hold in both cases.
+
+    Own entities come first so a device's own signal still wins. Note the
+    sibling is a different *registry* device, not a different physical one — a
+    third party observing this device from outside (a router's client tracker)
+    carries its own keys, so it is not a sibling and stays on the weaker P4-6
+    path where it belongs.
+
+    Sibling entities are filtered by the entity-level exclusions exactly as the
+    device's own are (see ``_build_one_tuple``), so "ignore this entity" holds
+    wherever the entity lives. Device-level exclusions deliberately do *not*
+    apply: excluding a device says "don't report on it", not "distrust it". The
+    split leaves each monitor as a device in its own right, and excluding those
+    from monitoring is the obvious tidy-up — if that also silenced their ping
+    sensors it would reinstate exactly the false outages this rejoin prevents.
+    To drop a specific signal, use the ``ignore_connectivity`` rules, which
+    exist for that and are applied to this whole list.
+    """
+    keys = _device_keys(device)
+    if not keys:
+        return reg_entries
+
+    seen = {device.id}
+    sibling_entries: list[RegistryEntry] = []
+    for key in keys:
+        for sibling in key_index.get(key, []):
+            if sibling.id in seen or sibling.disabled:
+                continue
+            seen.add(sibling.id)
+            sibling_entries.extend(
+                e
+                for e in er.async_entries_for_device(
+                    ent_reg, sibling.id, include_disabled_entities=False
+                )
+                if e.entity_id not in exclusions.entity_ids
+                and _entity_domain(e.entity_id) not in exclusions.domains
+            )
+    if not sibling_entries:
+        return reg_entries
+    return [*reg_entries, *sibling_entries]
 
 
 def _ignored_connectivity_ids(
@@ -380,18 +501,17 @@ def _from_mac_tracker(
     hass: HomeAssistant,
     device: DeviceEntry,
     ent_reg: er.EntityRegistry,
-    mac_index: dict[str, list[DeviceEntry]],
+    key_index: dict[tuple[str, str, str], list[DeviceEntry]],
 ) -> tuple[ConnectivityState, str] | None:
-    macs = {
-        value
-        for conn_type, value in device.connections
-        if conn_type == dr.CONNECTION_NETWORK_MAC
-    }
-    for mac in macs:
-        # Candidates include the device itself: HA merges devices that share a
-        # MAC into one entry (so a router's client device_tracker often lands on
-        # the same device), but separate devices sharing a MAC are also matched.
-        for candidate in mac_index.get(mac, []):
+    # MAC keys only. This priority is about a router seeing a hardware address
+    # on the network; a shared identifier says two integrations describe the
+    # same device, which is not evidence anything can reach it.
+    for key in _device_keys(device, macs_only=True):
+        # Candidates include the device itself: before HA 2026.8 the registry
+        # merged devices sharing a MAC (so a router's client device_tracker often
+        # landed on the same device); from 2026.8 they are separate devices, and
+        # both shapes are matched here.
+        for candidate in key_index.get(key, []):
             for entry in er.async_entries_for_device(
                 ent_reg, candidate.id, include_disabled_entities=False
             ):

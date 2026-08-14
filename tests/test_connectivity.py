@@ -15,6 +15,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+import custom_components.vigil.detection.inputs as conn_mod
 from custom_components.vigil.detection.engines.engine2_unavailability import is_offline
 from custom_components.vigil.detection.inputs import (
     _primary_config_entry,
@@ -312,10 +313,10 @@ async def test_fleet_meta_placeholder_does_not_mask_offline(
     dev_reg = dr.async_get(hass)
     ent_reg = er.async_get(hass)
     device = dev_reg.async_get_or_create(
-        config_entry_id=entry.entry_id, identifiers={("esphome", "node1")}
+        config_entry_id=entry.entry_id, identifiers={("demo", "node1")}
     )
     lux = ent_reg.async_get_or_create(
-        "sensor", "esphome", "node1_illuminance", device_id=device.id
+        "sensor", "demo", "node1_illuminance", device_id=device.id
     )
     pinned = ent_reg.async_get_or_create(
         "sensor", "fleet_meta", "node1_pinned_esphome_version", device_id=device.id
@@ -700,3 +701,344 @@ async def test_one_bad_device_does_not_blank_the_cycle(
     ids = {t.device_id for t in build_device_tuples(hass, NO_EXCLUSIONS)}
     assert good.id in ids  # the healthy device survives the bad one
     assert bad.id not in ids
+
+
+async def test_identifiers_that_are_not_pairs(hass: HomeAssistant) -> None:
+    """Identifiers are typed ``tuple[str, str]`` but real registries hold other
+    shapes — homekit writes 3-tuples, weatherflow_forecast a 1-tuple. Indexing
+    must survive them, and a 3-tuple must still pair on its first two elements."""
+    entry = _entry(hass, "demo", "Demo")
+    dev_reg = dr.async_get(hass)
+    ent_reg = er.async_get(hass)
+    for slug, ident in (
+        ("triple", ("homekit", "5165e386", "homekit.bridge")),
+        ("single", ("weatherflow_forecast",)),
+        ("empty", ()),
+    ):
+        device = dev_reg.async_get_or_create(
+            config_entry_id=entry.entry_id,
+            identifiers={ident, ("demo", slug)},  # type: ignore[arg-type]
+        )
+        e = ent_reg.async_get_or_create("sensor", "demo", slug, device_id=device.id)
+        hass.states.async_set(e.entity_id, "1")
+
+    tuples = build_device_tuples(hass, NO_EXCLUSIONS)
+    assert len(tuples) == 3  # none of the three was dropped
+
+    index = conn_mod._build_device_key_index(dev_reg)
+    assert ("id", "homekit", "5165e386") in index  # 3-tuple pairs on its first two
+    assert not any(k[1] == "weatherflow_forecast" for k in index)  # too short to pair
+
+
+# ---------------------------------------------------------------------------
+# Split devices (HA 2026.8). A device is one config entry's view of a physical
+# thing; 2026.8 stopped merging those views, so a monitoring integration's ping
+# sensor now sits on its own device beside the telemetry it watches. Both keep
+# the physical MAC, which is how Vigil rejoins them.
+#
+# These need a registry that permits two devices to share a MAC. Before 2026.8
+# connections are globally unique and async_get_or_create raises
+# DeviceConnectionCollisionError, so the state under test cannot be built at
+# all — hence the skip rather than an xfail.
+# ---------------------------------------------------------------------------
+
+requires_split_registry = pytest.mark.skipif(
+    not hasattr(dr.DeviceEntry, "config_entry_id"),
+    reason="HA < 2026.8 enforces globally unique connections, so two devices "
+    "cannot share a MAC and the split state cannot be constructed",
+)
+
+
+def _split_pair(
+    hass: HomeAssistant, mac: str, slug: str
+) -> tuple[dr.DeviceEntry, dr.DeviceEntry]:
+    """Two devices for one physical thing, as HA 2026.8 leaves them.
+
+    Returns (telemetry_device, monitor_device) — separate config entries,
+    separate registry devices, same MAC. The domains are deliberately not real
+    integrations, so HA does not try to import one on teardown.
+    """
+    dev_reg = dr.async_get(hass)
+    telemetry_entry = _entry(hass, "demo", "Telemetry")
+    monitor_entry = _entry(hass, "pulse", "Monitor")
+    telemetry = dev_reg.async_get_or_create(
+        config_entry_id=telemetry_entry.entry_id,
+        identifiers={("demo", slug)},
+        connections={(dr.CONNECTION_NETWORK_MAC, mac)},
+    )
+    monitor = dev_reg.async_get_or_create(
+        config_entry_id=monitor_entry.entry_id,
+        identifiers={("pulse", slug)},
+        connections={(dr.CONNECTION_NETWORK_MAC, mac)},
+    )
+    assert telemetry.id != monitor.id
+    return telemetry, monitor
+
+
+@requires_split_registry
+async def test_connectivity_sensor_on_split_sibling_is_found(
+    hass: HomeAssistant,
+) -> None:
+    """A ping sensor on the sibling device still counts as a P1 signal."""
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair(hass, "aa:bb:cc:dd:ee:10", "split1")
+    data = ent_reg.async_get_or_create(
+        "sensor", "demo", "split1s", device_id=telemetry.id
+    )
+    conn = _add_connectivity(ent_reg, monitor, "split1p", integration="pulse")
+    hass.states.async_set(data.entity_id, "21.5")
+    hass.states.async_set(conn.entity_id, "on")
+
+    t = {x.device_id: x for x in build_device_tuples(hass, NO_EXCLUSIONS)}[telemetry.id]
+    assert t.connectivity_state is ConnectivityState.UP
+    assert t.connectivity_source == "connectivity_binary_sensor"
+
+
+@requires_split_registry
+async def test_split_sibling_connectivity_vetoes_all_unknown(
+    hass: HomeAssistant,
+) -> None:
+    """The regression this guards: a reachable device must not read as offline.
+
+    Pre-2026.8 the ping sensor shared the telemetry's device and its UP vetoed
+    an all-``unknown`` data set. After the split it lives on the sibling; if
+    Vigil only looked at the device itself it would lose the veto and report an
+    outage on a device that is demonstrably reachable.
+    """
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair(hass, "aa:bb:cc:dd:ee:11", "split2")
+    data = ent_reg.async_get_or_create(
+        "sensor", "demo", "split2s", device_id=telemetry.id
+    )
+    conn = _add_connectivity(ent_reg, monitor, "split2p", integration="pulse")
+    hass.states.async_set(data.entity_id, "unknown")
+    hass.states.async_set(conn.entity_id, "on")
+
+    t = {x.device_id: x for x in build_device_tuples(hass, NO_EXCLUSIONS)}[telemetry.id]
+    assert t.connectivity_state is ConnectivityState.UP
+    assert t.all_unavailable is False  # strong UP vetoes, as it did pre-split
+
+
+@requires_split_registry
+async def test_split_sibling_connectivity_down_is_reported(
+    hass: HomeAssistant,
+) -> None:
+    """A sibling ping sensor reporting DOWN resolves the device DOWN."""
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair(hass, "aa:bb:cc:dd:ee:12", "split3")
+    data = ent_reg.async_get_or_create(
+        "sensor", "demo", "split3s", device_id=telemetry.id
+    )
+    conn = _add_connectivity(ent_reg, monitor, "split3p", integration="pulse")
+    hass.states.async_set(data.entity_id, "unavailable")
+    hass.states.async_set(conn.entity_id, "off")
+
+    t = {x.device_id: x for x in build_device_tuples(hass, NO_EXCLUSIONS)}[telemetry.id]
+    assert t.connectivity_state is ConnectivityState.DOWN
+    assert t.connectivity_source == "connectivity_binary_sensor"
+
+
+@requires_split_registry
+async def test_own_connectivity_sensor_beats_the_sibling(hass: HomeAssistant) -> None:
+    """The device's own signal wins over a sibling's."""
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair(hass, "aa:bb:cc:dd:ee:13", "split4")
+    own = _add_connectivity(ent_reg, telemetry, "split4own", integration="demo")
+    sibling = _add_connectivity(ent_reg, monitor, "split4sib", integration="pulse")
+    hass.states.async_set(own.entity_id, "off")
+    hass.states.async_set(sibling.entity_id, "on")
+
+    t = {x.device_id: x for x in build_device_tuples(hass, NO_EXCLUSIONS)}[telemetry.id]
+    assert t.connectivity_state is ConnectivityState.DOWN  # own sensor won
+
+
+@requires_split_registry
+async def test_ignore_connectivity_applies_to_split_sibling(
+    hass: HomeAssistant,
+) -> None:
+    """A vigil.yaml ignore rule still suppresses a mislabeled sibling sensor."""
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair(hass, "aa:bb:cc:dd:ee:14", "split5")
+    data = ent_reg.async_get_or_create(
+        "sensor", "demo", "split5s", device_id=telemetry.id
+    )
+    conn = _add_connectivity(ent_reg, monitor, "split5p", integration="pulse")
+    hass.states.async_set(data.entity_id, "12")
+    hass.states.async_set(conn.entity_id, "on")
+
+    ignore = [EntitySelector(integration="pulse", device_class="connectivity")]
+    tuples = build_device_tuples(hass, NO_EXCLUSIONS, ignore_connectivity=ignore)
+    t = {x.device_id: x for x in tuples}[telemetry.id]
+    assert t.connectivity_source == "none"
+
+
+@requires_split_registry
+async def test_device_without_mac_gains_no_siblings(hass: HomeAssistant) -> None:
+    """No MAC means no way to identify a sibling — behaviour is unchanged."""
+    dev_reg = dr.async_get(hass)
+    ent_reg = er.async_get(hass)
+    telemetry_entry = _entry(hass, "demo", "Telemetry")
+    monitor_entry = _entry(hass, "pulse", "Monitor")
+    telemetry = dev_reg.async_get_or_create(
+        config_entry_id=telemetry_entry.entry_id, identifiers={("demo", "nomac")}
+    )
+    monitor = dev_reg.async_get_or_create(
+        config_entry_id=monitor_entry.entry_id,
+        identifiers={("pulse", "nomac")},
+        connections={(dr.CONNECTION_NETWORK_MAC, "aa:bb:cc:dd:ee:15")},
+    )
+    data = ent_reg.async_get_or_create(
+        "sensor", "demo", "nomacs", device_id=telemetry.id
+    )
+    conn = _add_connectivity(ent_reg, monitor, "nomacp", integration="pulse")
+    hass.states.async_set(data.entity_id, "3")
+    hass.states.async_set(conn.entity_id, "on")
+
+    t = {x.device_id: x for x in build_device_tuples(hass, NO_EXCLUSIONS)}[telemetry.id]
+    assert t.connectivity_source == "none"
+
+
+@requires_split_registry
+async def test_excluded_entity_on_sibling_is_not_a_signal(hass: HomeAssistant) -> None:
+    """An excluded entity is ignored wherever it lives, sibling included."""
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair(hass, "aa:bb:cc:dd:ee:16", "split6")
+    data = ent_reg.async_get_or_create(
+        "sensor", "demo", "split6s", device_id=telemetry.id
+    )
+    conn = _add_connectivity(ent_reg, monitor, "split6p", integration="pulse")
+    hass.states.async_set(data.entity_id, "7")
+    hass.states.async_set(conn.entity_id, "on")
+
+    tuples = build_device_tuples(hass, _exclude(entity_ids={conn.entity_id}))
+    t = {x.device_id: x for x in tuples}[telemetry.id]
+    assert t.connectivity_source == "none"
+
+
+@requires_split_registry
+async def test_excluded_domain_on_sibling_is_not_a_signal(hass: HomeAssistant) -> None:
+    """An excluded domain is ignored wherever it lives, sibling included."""
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair(hass, "aa:bb:cc:dd:ee:17", "split7")
+    data = ent_reg.async_get_or_create(
+        "sensor", "demo", "split7s", device_id=telemetry.id
+    )
+    conn = _add_connectivity(ent_reg, monitor, "split7p", integration="pulse")
+    hass.states.async_set(data.entity_id, "7")
+    hass.states.async_set(conn.entity_id, "on")
+
+    tuples = build_device_tuples(hass, _exclude(domains={"binary_sensor"}))
+    t = {x.device_id: x for x in tuples}[telemetry.id]
+    assert t.connectivity_source == "none"
+
+
+@requires_split_registry
+async def test_excluding_the_monitor_device_keeps_its_signal(
+    hass: HomeAssistant,
+) -> None:
+    """Device-level exclusion means "don't report on it", not "distrust it".
+
+    The split leaves each monitor a device in its own right, so excluding those
+    from monitoring is the obvious tidy-up. It must not silence their ping
+    sensors: that would reinstate exactly the false outages the rejoin
+    prevents. ``ignore_connectivity`` is the tool for dropping a signal.
+    """
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair(hass, "aa:bb:cc:dd:ee:18", "split8")
+    data = ent_reg.async_get_or_create(
+        "sensor", "demo", "split8s", device_id=telemetry.id
+    )
+    conn = _add_connectivity(ent_reg, monitor, "split8p", integration="pulse")
+    hass.states.async_set(data.entity_id, "unknown")  # telemetry gone quiet
+    hass.states.async_set(conn.entity_id, "on")  # but it answers pings
+
+    tuples = build_device_tuples(hass, _exclude(device_ids={monitor.id}))
+    by_id = {x.device_id: x for x in tuples}
+    assert monitor.id not in by_id  # excluded from monitoring...
+    t = by_id[telemetry.id]
+    assert t.connectivity_state is ConnectivityState.UP  # ...but still trusted
+    assert t.all_unavailable is False  # no false outage
+
+
+def _split_pair_no_mac(
+    hass: HomeAssistant, ident: tuple[str, str]
+) -> tuple[dr.DeviceEntry, dr.DeviceEntry]:
+    """Two devices for one physical thing, joined only by a shared identifier.
+
+    The shape left by a UPS, switch or printer: neither integration publishes a
+    MAC, and the monitor copies the target's identifiers. Nothing here can be
+    matched on a hardware address.
+    """
+    dev_reg = dr.async_get(hass)
+    telemetry_entry = _entry(hass, "demo", "Telemetry")
+    monitor_entry = _entry(hass, "pulse", "Monitor")
+    telemetry = dev_reg.async_get_or_create(
+        config_entry_id=telemetry_entry.entry_id, identifiers={ident}
+    )
+    monitor = dev_reg.async_get_or_create(
+        config_entry_id=monitor_entry.entry_id, identifiers={ident}
+    )
+    assert telemetry.id != monitor.id
+    assert not telemetry.connections and not monitor.connections
+    return telemetry, monitor
+
+
+@requires_split_registry
+async def test_sibling_found_by_identifier_when_there_is_no_mac(
+    hass: HomeAssistant,
+) -> None:
+    """A shared identifier rejoins halves that share no hardware address."""
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair_no_mac(hass, ("nut", "ups-serial-1"))
+    data = ent_reg.async_get_or_create(
+        "sensor", "demo", "nomac-a", device_id=telemetry.id
+    )
+    conn = _add_connectivity(ent_reg, monitor, "nomac-p", integration="pulse")
+    hass.states.async_set(data.entity_id, "230")
+    hass.states.async_set(conn.entity_id, "on")
+
+    t = {x.device_id: x for x in build_device_tuples(hass, NO_EXCLUSIONS)}[telemetry.id]
+    assert t.connectivity_state is ConnectivityState.UP
+    assert t.connectivity_source == "connectivity_binary_sensor"
+
+
+@requires_split_registry
+async def test_identifier_sibling_vetoes_all_unknown(hass: HomeAssistant) -> None:
+    """And the rejoined signal still vetoes a false outage, as a MAC one does."""
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair_no_mac(hass, ("nut", "ups-serial-2"))
+    data = ent_reg.async_get_or_create(
+        "sensor", "demo", "nomac-b", device_id=telemetry.id
+    )
+    conn = _add_connectivity(ent_reg, monitor, "nomac-q", integration="pulse")
+    hass.states.async_set(data.entity_id, "unknown")
+    hass.states.async_set(conn.entity_id, "on")
+
+    t = {x.device_id: x for x in build_device_tuples(hass, NO_EXCLUSIONS)}[telemetry.id]
+    assert t.connectivity_state is ConnectivityState.UP
+    assert t.all_unavailable is False
+
+
+@requires_split_registry
+async def test_identifier_sibling_does_not_feed_the_router_path(
+    hass: HomeAssistant,
+) -> None:
+    """P4-6 stays MAC-only: a shared identifier is not evidence of reachability.
+
+    A device_tracker on an identifier-sibling must NOT resolve this device UP —
+    that priority means "a router can see this hardware address", which a shared
+    identifier says nothing about.
+    """
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair_no_mac(hass, ("nut", "ups-serial-3"))
+    data = ent_reg.async_get_or_create(
+        "sensor", "demo", "nomac-c", device_id=telemetry.id
+    )
+    tracker = ent_reg.async_get_or_create(
+        "device_tracker", "unifi", "nomac-client", device_id=monitor.id
+    )
+    hass.states.async_set(data.entity_id, "12")
+    hass.states.async_set(tracker.entity_id, "home")
+
+    t = {x.device_id: x for x in build_device_tuples(hass, NO_EXCLUSIONS)}[telemetry.id]
+    assert t.connectivity_source == "none"
