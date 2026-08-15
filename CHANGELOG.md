@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.7](https://github.com/bakerkj/ha-vigil/compare/v0.0.6...v0.0.7) (2026-08-15)
+
+
+### Features
+
+* declared mac_sources for cross-integration device correlation ([#57](https://github.com/bakerkj/ha-vigil/issues/57)) ([8286496](https://github.com/bakerkj/ha-vigil/commit/8286496c09ba5370039b572e921e30dd5054fc25))
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency uv to v0.12.5 ([#55](https://github.com/bakerkj/ha-vigil/issues/55)) ([eacf742](https://github.com/bakerkj/ha-vigil/commit/eacf74260aa67b3c527d011b9301109ec53e6552))
+
 ## [0.0.6](https://github.com/bakerkj/ha-vigil/compare/v0.0.5...v0.0.6) (2026-08-14)
 
 
