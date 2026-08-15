@@ -11,6 +11,7 @@ via it), so any layer can depend on it.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -216,6 +217,22 @@ def _as_frozenset(value: Any) -> frozenset[str]:
     if isinstance(value, Iterable):
         return frozenset(str(item) for item in value)
     return frozenset()
+
+
+@dataclass(frozen=True)
+class MacSource:
+    """Where one integration keeps a device's hardware address.
+
+    Vigil reads the standard ``mac`` connection with no configuration. Some
+    integrations put the address somewhere else -- under their own connection
+    type, or buried in an identifier — and a declared rule is how it is told
+    where to look. Declaring beats guessing: a rule states which integration
+    means what, so an integration nobody described simply does not correlate,
+    rather than correlating wrongly.
+    """
+
+    connection_types: tuple[str, ...] = ()
+    identifier_regex: re.Pattern[str] | None = None
 
 
 @dataclass(frozen=True)
