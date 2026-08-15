@@ -440,9 +440,11 @@ class VigilConfigStore:
             raw = await self._hass.async_add_executor_job(load_yaml, chosen)
             self._config = parse_vigil_config(raw)
             _LOGGER.info(
-                "Vigil: loaded %d watch + %d ignore rule(s) from %s",
+                "Vigil: loaded %d watch + %d ignore rule(s) and %d mac source(s) "
+                "from %s",
                 len(self._config.watch_rules),
                 len(self._config.ignore_connectivity),
+                len(self._config.mac_sources),
                 chosen,
             )
         except Exception as err:  # noqa: BLE001 - a bad file must never break setup/cycle
