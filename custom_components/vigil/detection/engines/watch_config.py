@@ -323,13 +323,20 @@ def parse_mac_sources(raw: Any) -> dict[str, MacSource]:
             f"{type(raw).__name__}"
         )
     sources: dict[str, MacSource] = {}
+    errors = 0
     for integration, rule in raw.items():
         try:
             sources[str(integration)] = _build_mac_source(str(integration), rule)
         except vol.Invalid as err:
+            errors += 1
             _LOGGER.warning(
                 "Vigil: ignoring mac_sources rule for %s: %s", integration, err
             )
+    if not sources and errors:
+        # Every rule invalid → raise so the caller keeps its last-good config.
+        # Returning {} would read as a successful parse and silently replace a
+        # working set of rules with nothing, correlating nothing at all.
+        raise vol.Invalid(f"all {errors} mac_sources rule(s) are invalid")
     return sources
 
 

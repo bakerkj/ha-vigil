@@ -274,6 +274,18 @@ def test_a_broken_section_raises_so_the_last_good_config_is_kept() -> None:
         parse_mac_sources(["not", "a", "mapping"])
 
 
+def test_every_rule_invalid_raises_rather_than_parsing_to_nothing() -> None:
+    """An empty result reads as a successful parse, which would silently
+    replace working rules with none and correlate nothing at all."""
+    with pytest.raises(vol.Invalid):
+        parse_mac_sources({"a": {}, "b": {"identifier_regex": "([0-9a-f]{12}"}})
+
+
+def test_an_empty_section_is_not_an_error() -> None:
+    """Nothing declared is a valid choice, distinct from everything broken."""
+    assert parse_mac_sources({}) == {}
+
+
 def test_section_is_optional() -> None:
     assert parse_vigil_config({"watch": []}).mac_sources == {}
     assert parse_vigil_config(None).mac_sources == {}
