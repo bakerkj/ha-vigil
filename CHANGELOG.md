@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.8](https://github.com/bakerkj/ha-vigil/compare/v0.0.7...v0.0.8) (2026-08-15)
+
+
+### Features
+
+* report the mac_sources count when the config loads ([#58](https://github.com/bakerkj/ha-vigil/issues/58)) ([74ce7a4](https://github.com/bakerkj/ha-vigil/commit/74ce7a4b2af5d714a96dd2eb27e5891e1a9233ff))
+
 ## [0.0.7](https://github.com/bakerkj/ha-vigil/compare/v0.0.6...v0.0.7) (2026-08-15)
 
 
