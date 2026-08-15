@@ -7,7 +7,8 @@ from __future__ import annotations
 
 import logging
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from types import MappingProxyType
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
@@ -38,6 +39,7 @@ from ..models import (
     ConnectivityState,
     DeviceTuple,
     ExclusionConfig,
+    MacSource,
     is_device_excluded,
     resolved_device_class,
 )
@@ -56,22 +58,30 @@ def build_device_tuples(
     exclusions: ExclusionConfig,
     *,
     ignore_connectivity: Sequence[EntitySelector] = (),
+    mac_sources: Mapping[str, MacSource] = MappingProxyType({}),
 ) -> list[DeviceTuple]:
     """Assemble a :class:`DeviceTuple` for every monitored device.
 
     ``ignore_connectivity`` are vigil.yaml selectors whose matched entities must
     NOT be treated as connectivity signals (a mislabeled
-    ``device_class: connectivity`` sensor).
+    ``device_class: connectivity`` sensor). ``mac_sources`` are vigil.yaml rules
+    naming where an integration keeps a device's hardware address.
     """
     dev_reg = dr.async_get(hass)
     ent_reg = er.async_get(hass)
-    key_index = _build_device_key_index(dev_reg)
+    key_index = _build_device_key_index(dev_reg, mac_sources)
 
     tuples: list[DeviceTuple] = []
     for device in dev_reg.devices.values():
         try:
             device_tuple = _build_one_tuple(
-                hass, device, ent_reg, key_index, exclusions, ignore_connectivity
+                hass,
+                device,
+                ent_reg,
+                key_index,
+                exclusions,
+                ignore_connectivity,
+                mac_sources,
             )
         except Exception:  # one bad device must not blank the cycle
             _LOGGER.exception("Vigil: failed to assess device %s", device.id)
@@ -89,6 +99,7 @@ def _build_one_tuple(
     key_index: dict[tuple[str, str, str], list[DeviceEntry]],
     exclusions: ExclusionConfig,
     ignore_connectivity: Sequence[EntitySelector],
+    mac_sources: Mapping[str, MacSource],
 ) -> DeviceTuple | None:
     """Assemble a single device's tuple, or ``None`` if it isn't monitored."""
     if device.disabled:
@@ -118,7 +129,14 @@ def _build_one_tuple(
         return None
 
     connectivity_state, source = _resolve_connectivity(
-        hass, device, reg_entries, ent_reg, key_index, ignore_connectivity, exclusions
+        hass,
+        device,
+        reg_entries,
+        ent_reg,
+        key_index,
+        ignore_connectivity,
+        exclusions,
+        mac_sources,
     )
 
     # Availability is judged over the device's own telemetry, excluding the
@@ -175,6 +193,93 @@ def _build_one_tuple(
 
 
 @callback
+def _address_keys(
+    device: DeviceEntry, mac_sources: Mapping[str, MacSource]
+) -> list[tuple[str, str, str]]:
+    """``("mac", <address>, "")`` for every hardware address ``device`` carries.
+
+    The standard ``mac`` connection needs no configuration. Anything else comes
+    from a declared ``mac_sources`` rule: a connection type the integration
+    invented, or a pattern pulling the address out of an identifier — some
+    integrations publish no connection at all and hide it in a device uuid.
+
+    Addresses are normalised to bare lowercase hex so the same hardware matches
+    however each integration chose to punctuate it.
+    """
+    found = {
+        _normalise_address(value)
+        for conn_type, value in device.connections
+        if conn_type == dr.CONNECTION_NETWORK_MAC
+    }
+    if mac_sources:
+        declared_types = {
+            t for source in mac_sources.values() for t in source.connection_types
+        }
+        found.update(
+            _normalise_address(value)
+            for conn_type, value in device.connections
+            if conn_type in declared_types
+        )
+        for ident in device.identifiers:
+            if len(ident) < 2:
+                continue
+            source = mac_sources.get(ident[0])
+            if source is None or source.identifier_regex is None:
+                continue
+            found.update(
+                _normalise_address(m)
+                for m in source.identifier_regex.findall(str(ident[1]))
+            )
+    return [("mac", address, "") for address in found if address]
+
+
+def _normalise_address(value: str) -> str:
+    """A hardware address as bare lowercase hex, however it was punctuated."""
+    return value.lower().replace(":", "").replace("-", "").replace(".", "")
+
+
+@callback
+def _drop_hub_chains(
+    index: dict[tuple[str, str, str], list[DeviceEntry]],
+    dev_reg: dr.DeviceRegistry,
+) -> dict[tuple[str, str, str], list[DeviceEntry]]:
+    """Discard keys shared by a device and something below it in a hub chain.
+
+    A gateway's children commonly inherit its address, so a key spanning a
+    ``via_device`` ancestry is not one physical thing seen twice — it is a hub
+    and the things behind it. Treating those as siblings would let a child's
+    signal vouch for the parent, which is exactly the false "it's up" this
+    whole path must not produce. Rare enough to drop the key outright rather
+    than try to pick a winner.
+    """
+    for key, devices in list(index.items()):
+        if len(devices) < 2 or not _shares_a_hub_chain(devices, dev_reg):
+            continue
+        _LOGGER.debug(
+            "Vigil: ignoring %s shared across a via_device chain (%s)",
+            key,
+            ", ".join(d.name or d.id for d in devices),
+        )
+        del index[key]
+    return index
+
+
+def _shares_a_hub_chain(devices: list[DeviceEntry], dev_reg: dr.DeviceRegistry) -> bool:
+    """Whether any device in the group is an ancestor of another."""
+    ids = {d.id for d in devices}
+    for device in devices:
+        seen: set[str] = set()
+        parent = device.via_device_id
+        while parent is not None and parent not in seen:
+            if parent in ids:
+                return True
+            seen.add(parent)
+            entry = dev_reg.async_get(parent)
+            parent = entry.via_device_id if entry else None
+    return False
+
+
+@callback
 def _identifier_keys(device: DeviceEntry) -> list[tuple[str, str, str]]:
     """``("id", domain, ident)`` for each of ``device``'s identifiers.
 
@@ -191,6 +296,7 @@ def _identifier_keys(device: DeviceEntry) -> list[tuple[str, str, str]]:
 @callback
 def _build_device_key_index(
     dev_reg: dr.DeviceRegistry,
+    mac_sources: Mapping[str, MacSource] = MappingProxyType({}),
 ) -> dict[tuple[str, str, str], list[DeviceEntry]]:
     """Map each registry key to the devices carrying it.
 
@@ -199,27 +305,28 @@ def _build_device_key_index(
     (``("id", <domain>, <ident>)``). Tagged by kind so callers can ask for one
     or both — the router-tracker path wants MACs only, while rejoining the
     halves of a split device wants either.
+
+    ``mac_sources`` adds the addresses an integration keeps somewhere other
+    than a standard ``mac`` connection, as declared in vigil.yaml.
     """
     index: dict[tuple[str, str, str], list[DeviceEntry]] = {}
     for device in dev_reg.devices.values():
-        for conn_type, value in device.connections:
-            if conn_type == dr.CONNECTION_NETWORK_MAC:
-                index.setdefault(("mac", value, ""), []).append(device)
+        for key in _address_keys(device, mac_sources):
+            index.setdefault(key, []).append(device)
         for key in _identifier_keys(device):
             index.setdefault(key, []).append(device)
-    return index
+    return _drop_hub_chains(index, dev_reg)
 
 
 @callback
 def _device_keys(
-    device: DeviceEntry, *, macs_only: bool = False
+    device: DeviceEntry,
+    mac_sources: Mapping[str, MacSource] = MappingProxyType({}),
+    *,
+    macs_only: bool = False,
 ) -> list[tuple[str, str, str]]:
     """The index keys ``device`` carries, in the same shape as the index."""
-    keys = [
-        ("mac", value, "")
-        for conn_type, value in device.connections
-        if conn_type == dr.CONNECTION_NETWORK_MAC
-    ]
+    keys = _address_keys(device, mac_sources)
     if not macs_only:
         keys += _identifier_keys(device)
     return keys
@@ -338,11 +445,14 @@ def _resolve_connectivity(
     key_index: dict[tuple[str, str, str], list[DeviceEntry]],
     ignore_connectivity: Sequence[EntitySelector],
     exclusions: ExclusionConfig,
+    mac_sources: Mapping[str, MacSource],
 ) -> tuple[ConnectivityState, str]:
     """Resolve a device's reachability via the brief's priority ladder."""
     # P1/P2 look at the device's own entities plus those of its split siblings —
     # see _same_device_entries.
-    entries = _same_device_entries(device, reg_entries, ent_reg, key_index, exclusions)
+    entries = _same_device_entries(
+        device, reg_entries, ent_reg, key_index, exclusions, mac_sources
+    )
     # Entities a vigil.yaml ignore rule marks as NOT a connectivity signal (e.g. a
     # mislabeled device_class=connectivity sensor) — skipped by P1/P2 below.
     ignored = _ignored_connectivity_ids(hass, entries, ignore_connectivity)
@@ -358,7 +468,7 @@ def _resolve_connectivity(
         return result
 
     # Priorities 4-6 — MAC correlation to a router/switch/scanner device_tracker.
-    result = _from_mac_tracker(hass, device, ent_reg, key_index)
+    result = _from_mac_tracker(hass, device, ent_reg, key_index, mac_sources)
     if result is not None:
         return result
 
@@ -372,6 +482,7 @@ def _same_device_entries(
     ent_reg: er.EntityRegistry,
     key_index: dict[tuple[str, str, str], list[DeviceEntry]],
     exclusions: ExclusionConfig,
+    mac_sources: Mapping[str, MacSource],
 ) -> list[RegistryEntry]:
     """The device's own entities, followed by those of its split siblings.
 
@@ -419,7 +530,7 @@ def _same_device_entries(
     To drop a specific signal, use the ``ignore_connectivity`` rules, which
     exist for that and are applied to this whole list.
     """
-    keys = _device_keys(device)
+    keys = _device_keys(device, mac_sources)
     if not keys:
         return reg_entries
 
@@ -502,11 +613,12 @@ def _from_mac_tracker(
     device: DeviceEntry,
     ent_reg: er.EntityRegistry,
     key_index: dict[tuple[str, str, str], list[DeviceEntry]],
+    mac_sources: Mapping[str, MacSource],
 ) -> tuple[ConnectivityState, str] | None:
     # MAC keys only. This priority is about a router seeing a hardware address
     # on the network; a shared identifier says two integrations describe the
     # same device, which is not evidence anything can reach it.
-    for key in _device_keys(device, macs_only=True):
+    for key in _device_keys(device, mac_sources, macs_only=True):
         # Candidates include the device itself: before HA 2026.8 the registry
         # merged devices sharing a MAC (so a router's client device_tracker often
         # landed on the same device); from 2026.8 they are separate devices, and

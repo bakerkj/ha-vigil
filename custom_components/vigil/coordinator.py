@@ -280,8 +280,14 @@ class VigilCoordinator(DataUpdateCoordinator[VigilData]):
         # isn't given a fresh grace. No-op without a recorder.
         # vigil.yaml ignore rules: entities not to treat as connectivity signals.
         ignore_connectivity = await self._config_store.async_get_ignore_connectivity()
+        # vigil.yaml mac_sources: where an integration keeps a device's address,
+        # when it isn't a standard ``mac`` connection.
+        mac_sources = await self._config_store.async_get_mac_sources()
         tuples = build_device_tuples(
-            self.hass, exclusions, ignore_connectivity=ignore_connectivity
+            self.hass,
+            exclusions,
+            ignore_connectivity=ignore_connectivity,
+            mac_sources=mac_sources,
         )
         # Record which devices are UP this cycle before seeding: a device we've
         # ever seen up that later drops is a live-observed outage (skip the

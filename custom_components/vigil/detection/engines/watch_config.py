@@ -27,8 +27,9 @@ from __future__ import annotations
 import fnmatch
 import logging
 import os
+import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import voluptuous as vol
@@ -38,7 +39,7 @@ from homeassistant.util.yaml import load_yaml
 from pydantic import BaseModel
 
 from ...const import STATE_FAULT_KEY, VIGIL_CONFIG_FILE, WATCH_RULES_FILE
-from ...models import AwareUTC, DeviceTuple, FaultPhase
+from ...models import AwareUTC, DeviceTuple, FaultPhase, MacSource
 from ...selectors import EntitySelector
 from ...storage import StateStore, StoreRepo, dump_model_map, load_model_map
 
@@ -278,12 +279,67 @@ def parse_ignore_rules(raw: Any) -> list[EntitySelector]:
     )
 
 
+_MAC_SOURCE_SCHEMA = vol.Schema(
+    {
+        vol.Optional("connection_types"): vol.All([str], vol.Length(min=1)),
+        vol.Optional("identifier_regex"): str,
+    }
+)
+
+
+def _build_mac_source(integration: str, raw: Any) -> MacSource:
+    conf = _MAC_SOURCE_SCHEMA(raw or {})
+    pattern: re.Pattern[str] | None = None
+    if (rx := conf.get("identifier_regex")) is not None:
+        try:
+            pattern = re.compile(rx, re.IGNORECASE)
+        except re.error as err:
+            raise vol.Invalid(f"identifier_regex is not a valid regex: {err}") from err
+        if pattern.groups != 1:
+            raise vol.Invalid(
+                "identifier_regex must have exactly one capture group holding "
+                f"the address, got {pattern.groups}"
+            )
+    source = MacSource(
+        connection_types=tuple(conf.get("connection_types", ())),
+        identifier_regex=pattern,
+    )
+    if not source.connection_types and source.identifier_regex is None:
+        raise vol.Invalid("must set connection_types and/or identifier_regex")
+    return source
+
+
+def parse_mac_sources(raw: Any) -> dict[str, MacSource]:
+    """Validate the ``mac_sources:`` section — a mapping of integration to rule.
+
+    A malformed rule is logged and skipped so the rest still load; the cost of
+    dropping one is a link vigil does not make, never a link it makes wrongly.
+    """
+    if raw is None:
+        return {}
+    if not isinstance(raw, dict):
+        raise vol.Invalid(
+            f"'mac_sources' must be a mapping of integration to rule, got "
+            f"{type(raw).__name__}"
+        )
+    sources: dict[str, MacSource] = {}
+    for integration, rule in raw.items():
+        try:
+            sources[str(integration)] = _build_mac_source(str(integration), rule)
+        except vol.Invalid as err:
+            _LOGGER.warning(
+                "Vigil: ignoring mac_sources rule for %s: %s", integration, err
+            )
+    return sources
+
+
 @dataclass(frozen=True)
 class VigilFileConfig:
     """The parsed contents of ``vigil.yaml``."""
 
     watch_rules: list[WatchRule]
     ignore_connectivity: list[EntitySelector]
+    mac_sources: dict[str, MacSource] = field(default_factory=dict)
 
 
 def parse_vigil_config(raw: Any) -> VigilFileConfig:
@@ -304,6 +360,7 @@ def parse_vigil_config(raw: Any) -> VigilFileConfig:
     return VigilFileConfig(
         watch_rules=parse_watch_rules(raw.get("watch")),
         ignore_connectivity=parse_ignore_rules(raw.get("ignore")),
+        mac_sources=parse_mac_sources(raw.get("mac_sources")),
     )
 
 
@@ -345,6 +402,11 @@ class VigilConfigStore:
         """The current connectivity-ignore selectors, reloading if the file changed."""
         await self._maybe_reload()
         return self._config.ignore_connectivity
+
+    async def async_get_mac_sources(self) -> dict[str, MacSource]:
+        """The current declared address sources, reloading if the file changed."""
+        await self._maybe_reload()
+        return self._config.mac_sources
 
     async def _maybe_reload(self) -> None:
         """(Re)parse the effective config file when it (or the choice of it) changes."""

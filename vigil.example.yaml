@@ -53,3 +53,26 @@ ignore:
     match:
       device_class: connectivity
       entity_id_suffix: "_hopper_connected"
+
+# --- MAC sources -------------------------------------------------------------
+# Vigil correlates two integrations' views of one physical device by hardware
+# address, which lets a network monitor's "this client is associated" signal
+# stand in for telemetry that has gone quiet. A standard `mac` connection is
+# read with no configuration.
+#
+# Some integrations keep the address somewhere else — under a connection type of
+# their own, or buried inside a device identifier — and a rule is how vigil is
+# told where to look. Declaring beats guessing: an integration nobody described
+# simply does not correlate, rather than correlating wrongly. A gateway's
+# children often inherit its address, and vigil drops any address shared along a
+# `via_device` chain for that reason.
+#
+# connection_types — read these connection types as hardware addresses.
+# identifier_regex — pull the address out of an identifier; exactly one capture
+#   group, holding the address. Many integrations mint a device uuid whose final
+#   field is the MAC (RFC 4122 puts the hardware address there).
+mac_sources:
+  aruba_instant_ap:
+    connection_types: ["aruba_instant_ap_mac"]
+  smartthinq_sensors:
+    identifier_regex: "-([0-9a-f]{12})$"
