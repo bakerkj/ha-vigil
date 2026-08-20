@@ -105,6 +105,36 @@ def _build_one_tuple(
     if device.disabled:
         return None
 
+    # VIGIL_SPLIT_DEDUPE — HA 2026.8 splits a composite device into one registry
+    # record per config entry (esphome + device_pulse + esphome_fleet each get
+    # their own record for the same physical device). Skip non-primary splits
+    # so a single physical device is not evaluated multiple times — the primary
+    # split (owned by the composite's original primary_config_entry) carries the
+    # authoritative connectivity signals; siblings are just cosmetic duplicates.
+    composite = getattr(device, "composite_device_id", None)
+    primary_entry = getattr(device, "composite_primary_config_entry", None)
+    if (
+        composite is not None
+        and primary_entry is not None
+        and device.config_entry_id != primary_entry
+    ):
+        return None
+
+    # VIGIL_MAC_SIBLING_DEDUPE — device_pulse and similar tracker integrations
+    # create their OWN device records (not composite splits) but share a MAC
+    # with the physical device's primary registry entry. If that primary is
+    # disabled, this tracker record should be treated as disabled too — else
+    # vigil reports it offline even though the user explicitly disabled it.
+    device_registry = dr.async_get(hass)
+    mac_conns = {c[1] for c in (device.connections or ()) if c[0] == "mac"}
+    if mac_conns:
+        for other in device_registry.devices.values():
+            if other.id == device.id or not other.disabled:
+                continue
+            other_macs = {c[1] for c in (other.connections or ()) if c[0] == "mac"}
+            if other_macs & mac_conns:
+                return None
+
     reg_entries = [
         e
         for e in er.async_entries_for_device(
