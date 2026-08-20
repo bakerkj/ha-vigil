@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.9](https://github.com/bakerkj/ha-vigil/compare/v0.0.8...v0.0.9) (2026-08-20)
+
+
+### Bug Fixes
+
+* deduplicate offline reports across HA 2026.8 device splits ([#61](https://github.com/bakerkj/ha-vigil/issues/61)) ([206f33d](https://github.com/bakerkj/ha-vigil/commit/206f33db4ee40a252f59ccbb06beb2b9ae99aedf))
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency vitest to v4.1.11 ([#60](https://github.com/bakerkj/ha-vigil/issues/60)) ([0d23945](https://github.com/bakerkj/ha-vigil/commit/0d23945d85eebcfe14879a7d52ff3b3177839240))
+
 ## [0.0.8](https://github.com/bakerkj/ha-vigil/compare/v0.0.7...v0.0.8) (2026-08-15)
 
 
