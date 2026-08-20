@@ -1042,3 +1042,162 @@ async def test_identifier_sibling_does_not_feed_the_router_path(
 
     t = {x.device_id: x for x in build_device_tuples(hass, NO_EXCLUSIONS)}[telemetry.id]
     assert t.connectivity_source == "none"
+
+
+# ---------------------------------------------------------------------------
+# HA 2026.8 device-split dedupe (#61) — see _build_one_tuple in inputs.py
+# ---------------------------------------------------------------------------
+
+
+import attr
+
+
+def _mark_composite_split(
+    hass: HomeAssistant,
+    primary: dr.DeviceEntry,
+    sibling: dr.DeviceEntry,
+    composite_id: str,
+) -> None:
+    """Simulate the post-2026.8 registry state: two split records with a shared
+    composite_device_id back-reference and composite_primary_config_entry set.
+
+    DeviceEntry is frozen; write-through the registry's internal dict with
+    attr.evolve to build the desired state that HA's migration would produce.
+    """
+    dev_reg = dr.async_get(hass)
+    for d in (primary, sibling):
+        replaced = attr.evolve(
+            d,
+            composite_device_id=composite_id,
+            composite_primary_config_entry=primary.config_entry_id,
+        )
+        dev_reg.devices[d.id] = replaced
+
+
+@requires_split_registry
+async def test_composite_split_non_primary_is_dropped(hass: HomeAssistant) -> None:
+    """A post-migration sibling split is not evaluated — the primary carries it."""
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair(hass, "aa:bb:cc:dd:ee:20", "splitc1")
+    _mark_composite_split(hass, telemetry, monitor, "orig-composite-1")
+    data = ent_reg.async_get_or_create(
+        "sensor", "demo", "splitc1s", device_id=telemetry.id
+    )
+    conn = _add_connectivity(ent_reg, monitor, "splitc1p", integration="pulse")
+    hass.states.async_set(data.entity_id, "21.0")
+    hass.states.async_set(conn.entity_id, "on")
+
+    by_id = {t.device_id: t for t in build_device_tuples(hass, NO_EXCLUSIONS)}
+    assert telemetry.id in by_id
+    assert monitor.id not in by_id  # sibling split skipped
+
+
+@requires_split_registry
+async def test_mac_sibling_disabled_primary_drops_tracker(
+    hass: HomeAssistant,
+) -> None:
+    """A tracker is dropped when its non-tracker MAC-sibling is disabled.
+
+    Reporter's phantom-offline case: user disables the ESPHome primary; HA
+    doesn't propagate disabled_by to the device_pulse sibling; its connectivity
+    sensor reads "off" and vigil reports a phantom offline. Tracker must skip.
+    """
+    dev_reg = dr.async_get(hass)
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair(hass, "aa:bb:cc:dd:ee:21", "splitc2")
+    data = ent_reg.async_get_or_create(
+        "sensor", "demo", "splitc2s", device_id=telemetry.id
+    )
+    conn = _add_connectivity(ent_reg, monitor, "splitc2p", integration="pulse")
+    hass.states.async_set(data.entity_id, "21.5")
+    hass.states.async_set(conn.entity_id, "off")  # phantom signal
+    dev_reg.async_update_device(telemetry.id, disabled_by=dr.DeviceEntryDisabler.USER)
+
+    by_id = {
+        t.device_id: t
+        for t in build_device_tuples(
+            hass, NO_EXCLUSIONS, tracker_integrations=frozenset({"pulse"})
+        )
+    }
+    assert telemetry.id not in by_id  # disabled → skipped by device.disabled
+    assert monitor.id not in by_id  # tracker with disabled non-tracker sibling
+
+
+@requires_split_registry
+async def test_mac_sibling_disabled_tracker_keeps_primary(
+    hass: HomeAssistant,
+) -> None:
+    """Directional: disabling a tracker must NOT drop the primary."""
+    dev_reg = dr.async_get(hass)
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair(hass, "aa:bb:cc:dd:ee:22", "splitc3")
+    data = ent_reg.async_get_or_create(
+        "sensor", "demo", "splitc3s", device_id=telemetry.id
+    )
+    conn = _add_connectivity(ent_reg, monitor, "splitc3p", integration="pulse")
+    hass.states.async_set(data.entity_id, "21.5")
+    hass.states.async_set(conn.entity_id, "on")
+    dev_reg.async_update_device(monitor.id, disabled_by=dr.DeviceEntryDisabler.USER)
+
+    by_id = {
+        t.device_id: t
+        for t in build_device_tuples(
+            hass, NO_EXCLUSIONS, tracker_integrations=frozenset({"pulse"})
+        )
+    }
+    assert telemetry.id in by_id  # primary still monitored
+    assert monitor.id not in by_id  # tracker was itself disabled
+
+
+@requires_split_registry
+async def test_tracker_integrations_empty_by_default_no_dedupe(
+    hass: HomeAssistant,
+) -> None:
+    """With no ``tracker_integrations`` declared, no MAC-sibling dedupe fires."""
+    dev_reg = dr.async_get(hass)
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair(hass, "aa:bb:cc:dd:ee:23", "splitc4")
+    data = ent_reg.async_get_or_create(
+        "sensor", "demo", "splitc4s", device_id=telemetry.id
+    )
+    conn = _add_connectivity(ent_reg, monitor, "splitc4p", integration="pulse")
+    hass.states.async_set(data.entity_id, "21.5")
+    hass.states.async_set(conn.entity_id, "off")
+    dev_reg.async_update_device(telemetry.id, disabled_by=dr.DeviceEntryDisabler.USER)
+
+    by_id = {t.device_id: t for t in build_device_tuples(hass, NO_EXCLUSIONS)}
+    # default tracker_integrations is empty — monitor is NOT skipped, its
+    # "off" connectivity signal would still report a phantom offline
+    assert monitor.id in by_id
+
+
+def test_parse_tracker_integrations_from_yaml() -> None:
+    """``tracker_integrations:`` yaml section round-trips to a frozenset."""
+    from custom_components.vigil.detection.engines.watch_config import (
+        parse_vigil_config,
+    )
+
+    cfg = parse_vigil_config({"tracker_integrations": ["device_pulse", "my_tracker"]})
+    assert cfg.tracker_integrations == frozenset({"device_pulse", "my_tracker"})
+
+
+def test_parse_tracker_integrations_absent_is_empty() -> None:
+    """Absent ``tracker_integrations:`` section yields an empty frozenset."""
+    from custom_components.vigil.detection.engines.watch_config import (
+        parse_vigil_config,
+    )
+
+    cfg = parse_vigil_config({})
+    assert cfg.tracker_integrations == frozenset()
+
+
+def test_parse_tracker_integrations_rejects_non_list() -> None:
+    """Malformed ``tracker_integrations:`` (non-list) is rejected."""
+    import voluptuous as vol
+
+    from custom_components.vigil.detection.engines.watch_config import (
+        parse_vigil_config,
+    )
+
+    with pytest.raises(vol.Invalid):
+        parse_vigil_config({"tracker_integrations": "device_pulse"})

@@ -309,6 +309,23 @@ def _build_mac_source(integration: str, raw: Any) -> MacSource:
     return source
 
 
+def parse_tracker_integrations(raw: Any) -> frozenset[str]:
+    """Validate the ``tracker_integrations:`` section — a list of domain names.
+
+    Populates the set of integrations vigil treats as tracker/monitor records
+    that shadow a physical device via a shared MAC. See DEFAULT_TRACKER_INTEGRATIONS
+    for how it's used. Empty when absent (no assumptions about third-party ints).
+    """
+    if raw is None:
+        return frozenset()
+    if not isinstance(raw, list) or not all(isinstance(x, str) and x for x in raw):
+        raise vol.Invalid(
+            f"'tracker_integrations' must be a list of non-empty integration "
+            f"domain strings, got {raw!r}"
+        )
+    return frozenset(raw)
+
+
 def parse_mac_sources(raw: Any) -> dict[str, MacSource]:
     """Validate the ``mac_sources:`` section — a mapping of integration to rule.
 
@@ -347,6 +364,7 @@ class VigilFileConfig:
     watch_rules: list[WatchRule]
     ignore_connectivity: list[EntitySelector]
     mac_sources: dict[str, MacSource] = field(default_factory=dict)
+    tracker_integrations: frozenset[str] = field(default_factory=frozenset)
 
 
 def parse_vigil_config(raw: Any) -> VigilFileConfig:
@@ -368,6 +386,9 @@ def parse_vigil_config(raw: Any) -> VigilFileConfig:
         watch_rules=parse_watch_rules(raw.get("watch")),
         ignore_connectivity=parse_ignore_rules(raw.get("ignore")),
         mac_sources=parse_mac_sources(raw.get("mac_sources")),
+        tracker_integrations=parse_tracker_integrations(
+            raw.get("tracker_integrations")
+        ),
     )
 
 
@@ -414,6 +435,11 @@ class VigilConfigStore:
         """The current declared address sources, reloading if the file changed."""
         await self._maybe_reload()
         return self._config.mac_sources
+
+    async def async_get_tracker_integrations(self) -> frozenset[str]:
+        """Current tracker-integration domain set, reloading if the file changed."""
+        await self._maybe_reload()
+        return self._config.tracker_integrations
 
     async def _maybe_reload(self) -> None:
         """(Re)parse the effective config file when it (or the choice of it) changes."""

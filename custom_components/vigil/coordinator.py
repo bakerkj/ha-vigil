@@ -283,11 +283,16 @@ class VigilCoordinator(DataUpdateCoordinator[VigilData]):
         # vigil.yaml mac_sources: where an integration keeps a device's address,
         # when it isn't a standard ``mac`` connection.
         mac_sources = await self._config_store.async_get_mac_sources()
+        # vigil.yaml tracker_integrations: domains whose device records are
+        # shadow trackers of a primary — used to skip phantom offlines when the
+        # primary is disabled but HA didn't propagate disabled_by.
+        tracker_integrations = await self._config_store.async_get_tracker_integrations()
         tuples = build_device_tuples(
             self.hass,
             exclusions,
             ignore_connectivity=ignore_connectivity,
             mac_sources=mac_sources,
+            tracker_integrations=tracker_integrations,
         )
         # Record which devices are UP this cycle before seeding: a device we've
         # ever seen up that later drops is a live-observed outage (skip the

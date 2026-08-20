@@ -27,6 +27,7 @@ from homeassistant.helpers.entity_registry import RegistryEntry
 
 from ..const import (
     AVAILABILITY_IGNORED_DOMAINS,
+    DEFAULT_TRACKER_INTEGRATIONS,
     DOMAIN,
     MAC_ROUTER_PLATFORMS,
     NO_VALUE_STATES,
@@ -59,6 +60,7 @@ def build_device_tuples(
     *,
     ignore_connectivity: Sequence[EntitySelector] = (),
     mac_sources: Mapping[str, MacSource] = MappingProxyType({}),
+    tracker_integrations: frozenset[str] = DEFAULT_TRACKER_INTEGRATIONS,
 ) -> list[DeviceTuple]:
     """Assemble a :class:`DeviceTuple` for every monitored device.
 
@@ -66,6 +68,8 @@ def build_device_tuples(
     NOT be treated as connectivity signals (a mislabeled
     ``device_class: connectivity`` sensor). ``mac_sources`` are vigil.yaml rules
     naming where an integration keeps a device's hardware address.
+    ``tracker_integrations`` names domains whose device records are treated as
+    shadow trackers of their MAC-siblings — see DEFAULT_TRACKER_INTEGRATIONS.
     """
     dev_reg = dr.async_get(hass)
     ent_reg = er.async_get(hass)
@@ -82,6 +86,7 @@ def build_device_tuples(
                 exclusions,
                 ignore_connectivity,
                 mac_sources,
+                tracker_integrations,
             )
         except Exception:  # one bad device must not blank the cycle
             _LOGGER.exception("Vigil: failed to assess device %s", device.id)
@@ -100,10 +105,42 @@ def _build_one_tuple(
     exclusions: ExclusionConfig,
     ignore_connectivity: Sequence[EntitySelector],
     mac_sources: Mapping[str, MacSource],
+    tracker_integrations: frozenset[str],
 ) -> DeviceTuple | None:
     """Assemble a single device's tuple, or ``None`` if it isn't monitored."""
     if device.disabled:
         return None
+
+    # HA 2026.8 splits a composite device into one record per config entry.
+    # A non-primary split is a cosmetic duplicate of the primary — skip so a
+    # single physical device isn't evaluated (and reported offline) more than
+    # once. Primary is identified by composite_primary_config_entry.
+    composite = getattr(device, "composite_device_id", None)
+    primary_entry = getattr(device, "composite_primary_config_entry", None)
+    if (
+        composite is not None
+        and primary_entry is not None
+        and device.config_entry_id != primary_entry
+    ):
+        return None
+
+    # Tracker/monitor integrations (see DEFAULT_TRACKER_INTEGRATIONS) create
+    # their own MAC-sharing device records that aren't composite splits. When
+    # the entity-owning primary is disabled, HA doesn't propagate disabled_by
+    # to the tracker, and its connectivity sensor reads "off" (device
+    # intentionally down), causing a phantom offline. Skip THIS record only
+    # when it belongs to a tracker integration and a disabled non-tracker
+    # MAC-sibling exists — directional by construction, so disabling a tracker
+    # never suppresses the primary. Requires knowing which integration owns
+    # this record, so we look it up before the composite-split skip below.
+    device_domain = _device_primary_domain(hass, device)
+    if device_domain in tracker_integrations:
+        for key in _device_keys(device, mac_sources, macs_only=True):
+            for sibling in key_index.get(key, []):
+                if sibling.id == device.id or not sibling.disabled:
+                    continue
+                if _device_primary_domain(hass, sibling) not in tracker_integrations:
+                    return None
 
     reg_entries = [
         e
@@ -330,6 +367,15 @@ def _device_keys(
     if not macs_only:
         keys += _identifier_keys(device)
     return keys
+
+
+@callback
+def _device_primary_domain(hass: HomeAssistant, device: DeviceEntry) -> str | None:
+    """The domain of a device's HA-declared primary_config_entry, or None."""
+    if device.primary_config_entry is None:
+        return None
+    entry = hass.config_entries.async_get_entry(device.primary_config_entry)
+    return entry.domain if entry is not None else None
 
 
 def _primary_config_entry(
