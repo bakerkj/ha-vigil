@@ -221,6 +221,17 @@ AVAILABILITY_IGNORED_DOMAINS = frozenset({"update", "button", "device_tracker"})
 # CONF_AVAILABILITY_IGNORED_PLATFORMS rather than hardcoded here.
 
 
+# Tracker/monitor integrations create their own MAC-sharing device records
+# that aren't composite splits. When their entity-owning MAC-sibling is
+# disabled, HA 2026.8 doesn't propagate disabled_by to the tracker, and its
+# connectivity sensor reads "off" (device intentionally down), causing a
+# phantom offline. When THIS device's primary integration domain is in this
+# set AND a disabled MAC-sibling from a non-tracker integration exists, the
+# tracker record is skipped. Populated via the ``tracker_integrations:`` list
+# in ``vigil.yaml``; empty by default (no opinion on third-party integrations).
+DEFAULT_TRACKER_INTEGRATIONS: frozenset[str] = frozenset()
+
+
 # --- Connectivity heuristics (Layer 2) ---------------------------------------
 
 # zwave_js exposes a per-node ``sensor`` whose unique_id ends with this suffix
