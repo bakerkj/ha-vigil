@@ -105,12 +105,10 @@ def _build_one_tuple(
     if device.disabled:
         return None
 
-    # VIGIL_SPLIT_DEDUPE — HA 2026.8 splits a composite device into one registry
-    # record per config entry (esphome + device_pulse + esphome_fleet each get
-    # their own record for the same physical device). Skip non-primary splits
-    # so a single physical device is not evaluated multiple times — the primary
-    # split (owned by the composite's original primary_config_entry) carries the
-    # authoritative connectivity signals; siblings are just cosmetic duplicates.
+    # HA 2026.8 splits a composite device into one record per config entry.
+    # A non-primary split is a cosmetic duplicate of the primary — skip so a
+    # single physical device isn't evaluated (and reported offline) more than
+    # once. Primary is identified by composite_primary_config_entry.
     composite = getattr(device, "composite_device_id", None)
     primary_entry = getattr(device, "composite_primary_config_entry", None)
     if (
@@ -120,19 +118,34 @@ def _build_one_tuple(
     ):
         return None
 
-    # VIGIL_MAC_SIBLING_DEDUPE — device_pulse and similar tracker integrations
-    # create their OWN device records (not composite splits) but share a MAC
-    # with the physical device's primary registry entry. If that primary is
-    # disabled, this tracker record should be treated as disabled too — else
-    # vigil reports it offline even though the user explicitly disabled it.
-    device_registry = dr.async_get(hass)
-    mac_conns = {c[1] for c in (device.connections or ()) if c[0] == "mac"}
-    if mac_conns:
-        for other in device_registry.devices.values():
-            if other.id == device.id or not other.disabled:
+    # Tracker integrations (device_pulse, etc.) create their own MAC-sharing
+    # device records that aren't composite splits. When the primary is
+    # disabled, HA doesn't propagate disabled_by to the tracker's record and
+    # its connectivity sensor reads "off" (device intentionally down), causing
+    # a phantom offline. Skip when a disabled MAC-sibling has ≥ our own data-
+    # entity count — directional, so disabling a bare tracker never suppresses
+    # the entity-rich primary. Uses ``key_index`` for MAC-normalized lookup.
+    own_data: int | None = None
+    for key in _device_keys(device, mac_sources, macs_only=True):
+        for sibling in key_index.get(key, []):
+            if sibling.id == device.id or not sibling.disabled:
                 continue
-            other_macs = {c[1] for c in (other.connections or ()) if c[0] == "mac"}
-            if other_macs & mac_conns:
+            if own_data is None:
+                own_data = sum(
+                    1
+                    for e in er.async_entries_for_device(
+                        ent_reg, device.id, include_disabled_entities=False
+                    )
+                    if e.platform not in exclusions.ignored_platforms
+                )
+            sibling_data = sum(
+                1
+                for e in er.async_entries_for_device(
+                    ent_reg, sibling.id, include_disabled_entities=True
+                )
+                if e.platform not in exclusions.ignored_platforms
+            )
+            if sibling_data > 0 and sibling_data >= own_data:
                 return None
 
     reg_entries = [

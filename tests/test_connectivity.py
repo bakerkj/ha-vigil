@@ -1042,3 +1042,101 @@ async def test_identifier_sibling_does_not_feed_the_router_path(
 
     t = {x.device_id: x for x in build_device_tuples(hass, NO_EXCLUSIONS)}[telemetry.id]
     assert t.connectivity_source == "none"
+
+
+# ---------------------------------------------------------------------------
+# HA 2026.8 device-split dedupe (#61) — see _build_one_tuple in inputs.py
+# ---------------------------------------------------------------------------
+
+
+import attr
+
+
+def _mark_composite_split(
+    hass: HomeAssistant,
+    primary: dr.DeviceEntry,
+    sibling: dr.DeviceEntry,
+    composite_id: str,
+) -> None:
+    """Simulate the post-2026.8 registry state: two split records with a shared
+    composite_device_id back-reference and composite_primary_config_entry set.
+
+    DeviceEntry is frozen; write-through the registry's internal dict with
+    attr.evolve to build the desired state that HA's migration would produce.
+    """
+    dev_reg = dr.async_get(hass)
+    for d in (primary, sibling):
+        replaced = attr.evolve(
+            d,
+            composite_device_id=composite_id,
+            composite_primary_config_entry=primary.config_entry_id,
+        )
+        dev_reg.devices[d.id] = replaced
+
+
+@requires_split_registry
+async def test_composite_split_non_primary_is_dropped(hass: HomeAssistant) -> None:
+    """A post-migration sibling split is not evaluated — the primary carries it."""
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair(hass, "aa:bb:cc:dd:ee:20", "splitc1")
+    _mark_composite_split(hass, telemetry, monitor, "orig-composite-1")
+    data = ent_reg.async_get_or_create(
+        "sensor", "demo", "splitc1s", device_id=telemetry.id
+    )
+    conn = _add_connectivity(ent_reg, monitor, "splitc1p", integration="pulse")
+    hass.states.async_set(data.entity_id, "21.0")
+    hass.states.async_set(conn.entity_id, "on")
+
+    by_id = {t.device_id: t for t in build_device_tuples(hass, NO_EXCLUSIONS)}
+    assert telemetry.id in by_id
+    assert monitor.id not in by_id  # sibling split skipped
+
+
+@requires_split_registry
+async def test_mac_sibling_disabled_primary_drops_tracker(
+    hass: HomeAssistant,
+) -> None:
+    """A tracker is dropped when its entity-rich MAC-sibling is disabled.
+
+    Reporter's phantom-offline case: user disables the ESPHome primary; HA
+    doesn't propagate disabled_by to the device_pulse sibling; its connectivity
+    sensor reads "off" and vigil reports a phantom offline. Tracker must skip.
+    """
+    dev_reg = dr.async_get(hass)
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair(hass, "aa:bb:cc:dd:ee:21", "splitc2")
+    for i in range(3):
+        d = ent_reg.async_get_or_create(
+            "sensor", "demo", f"splitc2s{i}", device_id=telemetry.id
+        )
+        hass.states.async_set(d.entity_id, "1")
+    conn = _add_connectivity(ent_reg, monitor, "splitc2p", integration="pulse")
+    hass.states.async_set(conn.entity_id, "off")  # phantom signal
+    dev_reg.async_update_device(telemetry.id, disabled_by=dr.DeviceEntryDisabler.USER)
+
+    by_id = {t.device_id: t for t in build_device_tuples(hass, NO_EXCLUSIONS)}
+    assert telemetry.id not in by_id  # disabled → skipped by original check
+    assert monitor.id not in by_id  # disabled sibling has more entities → skipped
+
+
+@requires_split_registry
+async def test_mac_sibling_disabled_tracker_keeps_primary(
+    hass: HomeAssistant,
+) -> None:
+    """Directional: disabling a bare tracker must NOT drop the entity-rich primary
+    (that would suppress genuine offline detection)."""
+    dev_reg = dr.async_get(hass)
+    ent_reg = er.async_get(hass)
+    telemetry, monitor = _split_pair(hass, "aa:bb:cc:dd:ee:22", "splitc3")
+    for i in range(3):
+        d = ent_reg.async_get_or_create(
+            "sensor", "demo", f"splitc3s{i}", device_id=telemetry.id
+        )
+        hass.states.async_set(d.entity_id, "1")
+    conn = _add_connectivity(ent_reg, monitor, "splitc3p", integration="pulse")
+    hass.states.async_set(conn.entity_id, "on")
+    dev_reg.async_update_device(monitor.id, disabled_by=dr.DeviceEntryDisabler.USER)
+
+    by_id = {t.device_id: t for t in build_device_tuples(hass, NO_EXCLUSIONS)}
+    assert telemetry.id in by_id  # primary still monitored
+    assert monitor.id not in by_id  # tracker was itself disabled
