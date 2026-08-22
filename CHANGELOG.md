@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.10](https://github.com/bakerkj/ha-vigil/compare/v0.0.9...v0.0.10) (2026-08-22)
+
+
+### Miscellaneous Chores
+
+* **deps:** update anthropics/claude-code-action action to v1.0.194 ([#63](https://github.com/bakerkj/ha-vigil/issues/63)) ([cec8e4d](https://github.com/bakerkj/ha-vigil/commit/cec8e4daef0f548fa4bcf6b76759ca8400390821))
+* **deps:** update dependency eslint to v10.9.0 ([#65](https://github.com/bakerkj/ha-vigil/issues/65)) ([74d31bf](https://github.com/bakerkj/ha-vigil/commit/74d31bf0cf1239cc9cc7596f84e9177cef71c355))
+* **deps:** update pre-commit hook astral-sh/ruff-pre-commit to v0.16.4 ([#66](https://github.com/bakerkj/ha-vigil/issues/66)) ([72d8ca6](https://github.com/bakerkj/ha-vigil/commit/72d8ca6200bb4ad23fdfa7bfd1c5ce5d66a9a9ac))
+
 ## [0.0.9](https://github.com/bakerkj/ha-vigil/compare/v0.0.8...v0.0.9) (2026-08-20)
 
 
