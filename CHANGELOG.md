@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.0.10](https://github.com/bakerkj/ha-vigil/compare/v0.0.9...v0.0.10) (2026-09-03)
+
+
+### Bug Fixes
+
+* support the Home Assistant 2026.9 device registry change ([#73](https://github.com/bakerkj/ha-vigil/issues/73)) ([391c653](https://github.com/bakerkj/ha-vigil/commit/391c653aa684ec995033af50eda4cf6b3874854a))
+
+
+### Miscellaneous Chores
+
+* **deps:** update anthropics/claude-code-action action to v1.0.194 ([#63](https://github.com/bakerkj/ha-vigil/issues/63)) ([cec8e4d](https://github.com/bakerkj/ha-vigil/commit/cec8e4daef0f548fa4bcf6b76759ca8400390821))
+* **deps:** update anthropics/claude-code-action action to v1.0.204 ([#67](https://github.com/bakerkj/ha-vigil/issues/67)) ([9bce537](https://github.com/bakerkj/ha-vigil/commit/9bce537482cdad475afd61a10c02a57d7f9c1ffa))
+* **deps:** update anthropics/claude-code-action action to v1.0.205 ([#69](https://github.com/bakerkj/ha-vigil/issues/69)) ([42959a2](https://github.com/bakerkj/ha-vigil/commit/42959a2ad44bba81f0d79694f07d3265c9b21bed))
+* **deps:** update anthropics/claude-code-action action to v1.0.210 ([#74](https://github.com/bakerkj/ha-vigil/issues/74)) ([0eb1b34](https://github.com/bakerkj/ha-vigil/commit/0eb1b348b5cc98977be2283b55a804bfb4352bb2))
+* **deps:** update anthropics/claude-code-action action to v1.0.214 ([#77](https://github.com/bakerkj/ha-vigil/issues/77)) ([3a44ebb](https://github.com/bakerkj/ha-vigil/commit/3a44ebbba3f4020d184dcf2cd9b44152891500a5))
+* **deps:** update dependency eslint to v10.9.0 ([#65](https://github.com/bakerkj/ha-vigil/issues/65)) ([74d31bf](https://github.com/bakerkj/ha-vigil/commit/74d31bf0cf1239cc9cc7596f84e9177cef71c355))
+* **deps:** update dependency eslint to v10.9.1 ([#68](https://github.com/bakerkj/ha-vigil/issues/68)) ([32efe13](https://github.com/bakerkj/ha-vigil/commit/32efe13571bff7e9c15cf3bf6ab884b5a4153110))
+* **deps:** update dependency globals to v17.12.0 ([#76](https://github.com/bakerkj/ha-vigil/issues/76)) ([ecfb619](https://github.com/bakerkj/ha-vigil/commit/ecfb61926318a43657815ba50436d44c0e2d0991))
+* **deps:** update dependency homeassistant to ==2026.9.* ([#78](https://github.com/bakerkj/ha-vigil/issues/78)) ([b4d4aca](https://github.com/bakerkj/ha-vigil/commit/b4d4acad9c69300e37b8cc7395c08d182493fadd))
+* **deps:** update dependency json-schema-to-typescript to v16 ([#70](https://github.com/bakerkj/ha-vigil/issues/70)) ([b91bf5b](https://github.com/bakerkj/ha-vigil/commit/b91bf5b3d9a425c9bb151db5a2d10c2b17f0870f))
+* **deps:** update dependency uv to v0.12.7 ([#71](https://github.com/bakerkj/ha-vigil/issues/71)) ([f8c2ef6](https://github.com/bakerkj/ha-vigil/commit/f8c2ef6ae8eaa1db40fcf01c3fc2132d424b99be))
+* **deps:** update dependency uv to v0.12.9 ([#75](https://github.com/bakerkj/ha-vigil/issues/75)) ([a3415d7](https://github.com/bakerkj/ha-vigil/commit/a3415d7ad31f0fa6434c18228a350dd6c3ed5bf6))
+* **deps:** update pre-commit hook astral-sh/ruff-pre-commit to v0.16.4 ([#66](https://github.com/bakerkj/ha-vigil/issues/66)) ([72d8ca6](https://github.com/bakerkj/ha-vigil/commit/72d8ca6200bb4ad23fdfa7bfd1c5ce5d66a9a9ac))
+* **deps:** update pre-commit hook astral-sh/ruff-pre-commit to v0.16.5 ([#72](https://github.com/bakerkj/ha-vigil/issues/72)) ([75a52b9](https://github.com/bakerkj/ha-vigil/commit/75a52b9ad3cce318a9850aa4ccecc26b1d53a2f4))
+
 ## [0.0.9](https://github.com/bakerkj/ha-vigil/compare/v0.0.8...v0.0.9) (2026-08-20)
 
 
