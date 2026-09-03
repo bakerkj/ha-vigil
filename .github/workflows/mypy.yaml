@@ -19,20 +19,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # PINNED — the stable release pyproject/uv.lock pin; Renovate-bumped.
-          - name: mypy (HA pinned)
-            slug: pinned
+          # HA 2026.8 — the pinned stable release pyproject/uv.lock track;
+          # Renovate-bumped within its minor.
+          - name: mypy (HA 2026.8)
+            slug: 2026-8
             ha_override: ""
             prerelease: ""
-          # NEXT — the upcoming release, ahead of the pinned line. Hard-coded to a
+          # HA 2026.9 — the current stable release, ahead of the pin. Hard-coded to a
           # beta because the plugin has no final-2026.9 pin yet (only 2026.9.0b6);
-          # bumped on purpose, and folded into PINNED once that plugin ships. Some
-          # type errors surface only here (2026.9 widened async_get to include
+          # bumped on purpose, and folded into the 2026.8 leg once that plugin ships.
+          # Some type errors surface only here (2026.9 widened async_get to include
           # ChildDeviceEntry), which is the whole reason this leg exists. The 2026.7
           # floor is intentionally NOT type-checked: its runtime-skipped
           # composite-split tests carry pre-existing 2026.7-only type errors.
-          - name: mypy (HA next 2026.9 beta)
-            slug: next
+          - name: mypy (HA 2026.9 current)
+            slug: 2026-9
             ha_override: homeassistant==2026.9.0b6
             prerelease: "--prerelease=allow"
     steps:
