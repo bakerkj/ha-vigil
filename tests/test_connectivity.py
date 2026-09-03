@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 from freezegun.api import FrozenDateTimeFactory
@@ -1061,17 +1062,22 @@ def _mark_composite_split(
     """Simulate the post-2026.8 registry state: two split records with a shared
     composite_device_id back-reference and composite_primary_config_entry set.
 
-    DeviceEntry is frozen; write-through the registry's internal dict with
+    DeviceEntry is frozen; write-through the registry's internal container with
     attr.evolve to build the desired state that HA's migration would produce.
+    HA >=2026.9 moved that container to ``_devices`` (``.devices`` is now a
+    read-only view without ``__setitem__``); <=2026.8 keeps it on ``.devices``.
     """
     dev_reg = dr.async_get(hass)
+    # Deliberately a raw internal container write; typed Any so the write-through
+    # is accepted whether it is the 2026.8 mutable mapping or the 2026.9 backing.
+    container: Any = getattr(dev_reg, "_devices", dev_reg.devices)
     for d in (primary, sibling):
         replaced = attr.evolve(
             d,
             composite_device_id=composite_id,
             composite_primary_config_entry=primary.config_entry_id,
         )
-        dev_reg.devices[d.id] = replaced
+        container[d.id] = replaced
 
 
 @requires_split_registry

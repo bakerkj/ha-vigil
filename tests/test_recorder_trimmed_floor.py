@@ -171,8 +171,15 @@ async def test_recorder_blind_device_still_not_floored(
         config_entry_id=hub.entry_id, identifiers={("demo", "blindfloor")}
     )
     # The device's only data entity is recorder-EXCLUDED -> zero rows ever.
+    # Force the object_id: HA >=2026.9 derives entity_ids from the device/entry
+    # name ("Blind Hub" -> sensor.blind_hub) rather than the unique_id, which
+    # would slip past the ``sensor.*blindfloor*`` recorder-exclusion glob.
     sensor = ent_reg.async_get_or_create(
-        "sensor", "demo", "blindfloor_1", device_id=device.id
+        "sensor",
+        "demo",
+        "blindfloor_1",
+        device_id=device.id,
+        suggested_object_id="blindfloor_1",
     )
     eid = sensor.entity_id
     assert "blindfloor" in eid

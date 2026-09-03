@@ -9,13 +9,59 @@ permissions:
   contents: read
 
 jobs:
-  mypy:
+  versions:
+    name: ${{ matrix.name }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    strategy:
+      # Report both results; a type error that only appears on one HA version
+      # (e.g. a widened return type) is useful to see next to the other's pass.
+      fail-fast: false
+      matrix:
+        include:
+          # HA 2026.8 — the pinned stable release pyproject/uv.lock track;
+          # Renovate-bumped within its minor.
+          - name: mypy (HA 2026.8)
+            slug: 2026-8
+            ha_override: ""
+            prerelease: ""
+          # HA 2026.9 — the current stable release, ahead of the pin. Hard-coded to a
+          # beta because the plugin has no final-2026.9 pin yet (only 2026.9.0b6);
+          # bumped on purpose, and folded into the 2026.8 leg once that plugin ships.
+          # Some type errors surface only here (2026.9 widened async_get to include
+          # ChildDeviceEntry), which is the whole reason this leg exists. The 2026.7
+          # floor is intentionally NOT type-checked: its runtime-skipped
+          # composite-split tests carry pre-existing 2026.7-only type errors.
+          - name: mypy (HA 2026.9 current)
+            slug: 2026-9
+            ha_override: homeassistant==2026.9.0b6
+            prerelease: "--prerelease=allow"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           cache-dependency-glob: "uv.lock"
-          cache-suffix: mypy
-      - run: uv run mypy custom_components/vigil tests
+          cache-suffix: mypy-${{ matrix.slug }}
+      - run: uv sync
+      # Imperative override of the locked HA, same idiom as tests.yaml; the plugin
+      # is named unpinned so uv re-resolves it to match. --no-sync afterwards keeps
+      # uv from restoring the locked version underneath.
+      - name: Override the installed Home Assistant
+        if: matrix.ha_override != ''
+        run: >-
+          uv pip install ${{ matrix.prerelease }} "${{ matrix.ha_override }}"
+          pytest-homeassistant-custom-component
+      - run: uv run --no-sync mypy custom_components/vigil tests
+
+  # Stable name for branch protection to require; the matrix jobs are named after
+  # the HA version and move when the pin does. if: always() so a matrix failure
+  # still reports this check (failed) rather than leaving it skipped and blocking.
+  mypy:
+    needs: versions
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Mirror the matrix result
+        run: |
+          echo "matrix result: ${{ needs.versions.result }}"
+          [ "${{ needs.versions.result }}" = "success" ]

@@ -48,6 +48,28 @@ from ..selectors import EntitySelector
 
 _LOGGER = logging.getLogger(__name__)
 
+
+@callback
+def device_entries(dev_reg: dr.DeviceRegistry) -> list[DeviceEntry]:
+    """Every device entry, spanning the HA 2026.9 ``registry.devices`` change.
+
+    HA >=2026.9 returns a view whose iteration yields ``DeviceEntry`` objects and
+    whose mapping methods (``.values()``, subscripting, ``str`` membership) are
+    deprecated and slated for removal in 2027.9. HA <=2026.8 returns a ``dict``-like
+    mapping: iterating it yields device-id *strings*, with the entries under
+    ``.values()``. Probe the first element to pick the path that neither trips the
+    deprecation report on new HA nor yields the wrong element type on old HA. Note
+    ``DeviceEntry`` is unhashable on 2026.9 (it carries ``set`` fields), so callers
+    must not put these entries in a ``set`` — collect ``entry.id`` instead.
+    """
+    devices = dev_reg.devices
+    for item in devices:
+        if isinstance(item, DeviceEntry):  # HA >=2026.9: iteration yields entries
+            return list(devices)
+        return list(devices.values())  # HA <=2026.8: iteration yields id strings
+    return []  # empty registry
+
+
 # device_tracker "present" states that count as UP.
 _TRACKER_HOME = {STATE_HOME, "on"}
 _TRACKER_AWAY = {"not_home", "away", STATE_OFF}
@@ -76,7 +98,7 @@ def build_device_tuples(
     key_index = _build_device_key_index(dev_reg, mac_sources)
 
     tuples: list[DeviceTuple] = []
-    for device in dev_reg.devices.values():
+    for device in device_entries(dev_reg):
         try:
             device_tuple = _build_one_tuple(
                 hass,
@@ -311,8 +333,11 @@ def _shares_a_hub_chain(devices: list[DeviceEntry], dev_reg: dr.DeviceRegistry) 
             if parent in ids:
                 return True
             seen.add(parent)
+            # HA 2026.9 widened async_get to DeviceEntry | ChildDeviceEntry | None;
+            # only a DeviceEntry carries via_device_id, so a child (or None) ends
+            # the chain rather than raising.
             entry = dev_reg.async_get(parent)
-            parent = entry.via_device_id if entry else None
+            parent = entry.via_device_id if isinstance(entry, dr.DeviceEntry) else None
     return False
 
 
@@ -347,7 +372,7 @@ def _build_device_key_index(
     than a standard ``mac`` connection, as declared in vigil.yaml.
     """
     index: dict[tuple[str, str, str], list[DeviceEntry]] = {}
-    for device in dev_reg.devices.values():
+    for device in device_entries(dev_reg):
         for key in _address_keys(device, mac_sources):
             index.setdefault(key, []).append(device)
         for key in _identifier_keys(device):
