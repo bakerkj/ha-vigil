@@ -11,7 +11,9 @@ made wrongly.
 
 from __future__ import annotations
 
+import inspect
 import re
+from typing import Any
 
 import pytest
 import voluptuous as vol
@@ -210,12 +212,19 @@ async def test_a_hub_and_its_children_are_not_siblings(hass: HomeAssistant) -> N
         identifiers={("bridgedemo", f"gw-{_BARE}")},
         name="Gateway",
     )
+    # via_device_id arrived in 2026.8 and is required on 2026.9 (the via_device
+    # tuple is deprecated there and raises in a test frame); 2026.7 only accepts
+    # the tuple. Pick whichever the installed signature offers.
+    via: dict[str, Any]
+    if "via_device_id" in inspect.signature(reg.async_get_or_create).parameters:
+        via = {"via_device_id": gateway.id}
+    else:
+        via = {"via_device": ("bridgedemo", f"gw-{_BARE}")}
     child = reg.async_get_or_create(
         config_entry_id=entry.entry_id,
         identifiers={("bridgedemo", f"blind-{_BARE}")},
-        # via_device_id (not the deprecated via_device tuple, removed 2026.9).
-        via_device_id=gateway.id,
         name="Blind",
+        **via,
     )
     rule = {"bridgedemo": MacSource(identifier_regex=re.compile(r"-([0-9a-f]{12})$"))}
     assert child.via_device_id == gateway.id  # the chain the guard looks for
