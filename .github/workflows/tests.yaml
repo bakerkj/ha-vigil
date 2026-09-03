@@ -15,14 +15,31 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # CEILING — whatever pyproject/uv.lock currently pin. Renovate bumps
-          # that pin, so this job follows Home Assistant forward on its own and
-          # is where a new release's breakage shows up first. Primary target,
-          # and the version the coverage gate is calibrated against.
-          - name: HA ceiling (pinned)
-            slug: ha-ceiling
-            downgrade: ""
+          # PINNED — whatever pyproject/uv.lock currently pin (a stable release).
+          # Renovate bumps that pin, so this job follows Home Assistant forward on
+          # its own. Primary target, and the version the coverage gate is
+          # calibrated against. Not the newest line while a beta leg runs above it
+          # (see NEXT): the coverage gate stays on a stable, fully-resolved env.
+          - name: HA pinned (stable)
+            slug: ha-pinned
+            ha_override: ""
+            prerelease: ""
             coverage: true
+          # NEXT — the upcoming release, ahead of the pinned line, as an early
+          # warning for breakage before it reaches a stable pin. Hard-coded to a
+          # BETA because pytest-homeassistant-custom-component pins HA exactly and
+          # has not yet published a release pinning the final 2026.9.0 — only
+          # 2026.9.0b6. So this cannot be the pinned/coverage leg yet. Like the
+          # floor, it is deliberately hard-coded (not in pyproject, so Renovate
+          # doesn't see it) and bumped on purpose: raise the beta as new ones ship,
+          # and once the final-2026.9 plugin lands, move the pin to pyproject
+          # (making it the PINNED leg) and delete this entry. --prerelease=allow is
+          # required for uv to resolve a beta at all.
+          - name: HA next (2026.9 beta)
+            slug: ha-next
+            ha_override: homeassistant==2026.9.0b6
+            prerelease: "--prerelease=allow"
+            coverage: false
           # FLOOR — the oldest release still supported. Deliberately hard-coded
           # here and NOT in pyproject, so Renovate never sees it: bumping the
           # floor drops support for everyone still on it, which is a decision to
@@ -42,7 +59,8 @@ jobs:
           # gates it exists to exercise at the same time.
           - name: HA floor (2026.7)
             slug: ha-floor
-            downgrade: homeassistant==2026.7.*
+            ha_override: homeassistant==2026.7.*
+            prerelease: ""
             coverage: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -62,10 +80,11 @@ jobs:
       # re-resolves it down to the release matching the requested HA (it pins HA
       # exactly, so leaving the locked one installed would conflict). Every later
       # step uses --no-sync so uv doesn't restore the lockfile version underneath.
-      - name: Downgrade Home Assistant to the floor
-        if: matrix.downgrade != ''
+      # prerelease is empty for stable overrides and --prerelease=allow for a beta.
+      - name: Override the installed Home Assistant
+        if: matrix.ha_override != ''
         run: >-
-          uv pip install "${{ matrix.downgrade }}"
+          uv pip install ${{ matrix.prerelease }} "${{ matrix.ha_override }}"
           pytest-homeassistant-custom-component
 
       - name: Home Assistant under test

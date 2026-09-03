@@ -22,6 +22,7 @@ from .detection.engines.engine2_unavailability import detect_unavailability_issu
 from .detection.engines.engine3_staleness import detect_staleness_issues
 from .detection.engines.engine4_watch_rules import detect_watch_issues
 from .detection.engines.engine5_apps import detect_app_issues
+from .detection.inputs import device_entries
 from .detection.suppression import suppress_issues
 from .models import IssueKind, VigilData, build_vigil_data
 from .reporting.health import build_integration_health
@@ -57,7 +58,7 @@ async def run_detection(ctx: CycleContext) -> VigilData:
         boot_time=ctx.boot_time,
         # GC downtime only for devices gone from the registry, not ones merely
         # missing from this cycle's tuples (mid-reconnect after a restart).
-        known_device_ids=set(dr.async_get(ctx.hass).devices),
+        known_device_ids={d.id for d in device_entries(dr.async_get(ctx.hass))},
     )
 
     # Engine 3 — staleness (learning-gated). Observes into ctx.learner.

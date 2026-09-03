@@ -213,7 +213,8 @@ async def test_a_hub_and_its_children_are_not_siblings(hass: HomeAssistant) -> N
     child = reg.async_get_or_create(
         config_entry_id=entry.entry_id,
         identifiers={("bridgedemo", f"blind-{_BARE}")},
-        via_device=("bridgedemo", f"gw-{_BARE}"),
+        # via_device_id (not the deprecated via_device tuple, removed 2026.9).
+        via_device_id=gateway.id,
         name="Blind",
     )
     rule = {"bridgedemo": MacSource(identifier_regex=re.compile(r"-([0-9a-f]{12})$"))}
