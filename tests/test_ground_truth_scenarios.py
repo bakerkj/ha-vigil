@@ -384,6 +384,43 @@ async def test_ibeacon_presence_tracker_never_flagged(hass: HomeAssistant) -> No
 
 
 # ---------------------------------------------------------------------------
+# Scenario 3b — a notify-only sink (e.g. a telegram_bot allowed-chat) → never
+# flagged. REQUIREMENT: a device whose only entity is a ``notify`` has no data
+# entities — a notify state is the last-sent timestamp ("unknown" until
+# something is sent), never a reachability signal — so it must never be an
+# offline candidate. Dropping ``notify`` from AVAILABILITY_IGNORED_DOMAINS would
+# count the unknown notify entity as data → all_unavailable True → a phantom
+# offline "inferred from silence". A genuine transport failure is still caught by
+# Engine 1 (the config entry errors), not here. (Path: build_device_tuples +
+# is_offline.)
+# ---------------------------------------------------------------------------
+async def test_notify_sink_never_flagged(hass: HomeAssistant) -> None:
+    # Loadable "demo" config entry for clean teardown; the notify entity platform
+    # stays "telegram_bot" (faithful to a real allowed-chat notify entity).
+    demo = _entry(hass, "demo", "Notify Bot")
+    dev_reg = dr.async_get(hass)
+    ent_reg = er.async_get(hass)
+    device = dev_reg.async_get_or_create(
+        config_entry_id=demo.entry_id,
+        identifiers={("telegram_bot", "bot_chat")},
+    )
+    notify = ent_reg.async_get_or_create(
+        "notify",
+        "telegram_bot",
+        "bot_chat",
+        device_id=device.id,
+    )
+    # A notify sink sits at "unknown" until a message is sent through it.
+    hass.states.async_set(notify.entity_id, "unknown")
+
+    t = {x.device_id: x for x in build_device_tuples(hass, NO_EXCLUSIONS)}[device.id]
+    assert not t.data_entity_ids
+    assert t.all_unavailable is False
+    assert is_offline(t) is False
+    await _settle(hass, demo)
+
+
+# ---------------------------------------------------------------------------
 # Scenario 4 — Plant B, partially reporting → ALIVE.
 # REQUIREMENT: a device with at least one real value flowing (illuminance "236",
 # temperature "72.5") is alive even though moisture/conductivity read "0".

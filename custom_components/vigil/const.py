@@ -212,10 +212,17 @@ APP_UNSTABLE_THRESHOLD = 3
 
 # Domains that hold no live device state, so they must not count toward the
 # all-entities-unavailable judgement: ``update`` reports "off" while a node is
-# dead, ``button`` carries no telemetry, and ``device_tracker`` reports presence
-# ("where"), never liveness. Genuine diagnostic sensors (RSSI, battery) are NOT
-# excluded — they go unavailable with the device and are good signals.
-AVAILABILITY_IGNORED_DOMAINS = frozenset({"update", "button", "device_tracker"})
+# dead, ``button`` carries no telemetry, ``device_tracker`` reports presence
+# ("where"), never liveness, and ``notify`` is an OUTBOUND sink whose state is
+# the last-sent timestamp (``unknown`` until something is sent) — never a
+# reachability signal, so a notify-only device (e.g. a telegram_bot allowed-chat)
+# must not be judged "offline" from its silence. A genuine transport failure is
+# still caught by Engine 1 (the config entry goes into an error state). Genuine
+# diagnostic sensors (RSSI, battery) are NOT excluded — they go unavailable with
+# the device and are good signals.
+AVAILABILITY_IGNORED_DOMAINS = frozenset(
+    {"update", "button", "device_tracker", "notify"}
+)
 
 # Annotation platforms are deployment-specific, supplied via the user option
 # CONF_AVAILABILITY_IGNORED_PLATFORMS rather than hardcoded here.
