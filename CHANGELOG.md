@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.0.11](https://github.com/bakerkj/ha-vigil/compare/v0.0.10...v0.0.11) (2026-09-05)
+
+
+### Bug Fixes
+
+* never flag notify-only devices offline from silence ([#84](https://github.com/bakerkj/ha-vigil/issues/84)) ([e76badd](https://github.com/bakerkj/ha-vigil/commit/e76badd0c5426dbde0686c135d49a2d6262248d3))
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency eslint to v10.10.0 ([#83](https://github.com/bakerkj/ha-vigil/issues/83)) ([4e30ad0](https://github.com/bakerkj/ha-vigil/commit/4e30ad0dd6a27e097204479157c822507dc38efb))
+* **deps:** update dependency uv to v0.12.10 ([#82](https://github.com/bakerkj/ha-vigil/issues/82)) ([4ef072b](https://github.com/bakerkj/ha-vigil/commit/4ef072b951c8f1df4205f36199d012e4d24496f5))
+* **deps:** update dependency vitest to v5 ([#79](https://github.com/bakerkj/ha-vigil/issues/79)) ([1595592](https://github.com/bakerkj/ha-vigil/commit/1595592b856db6d1d905700df63ab2643eae9924))
+* **deps:** update pre-commit hook astral-sh/ruff-pre-commit to v0.16.6 ([#81](https://github.com/bakerkj/ha-vigil/issues/81)) ([61aeee9](https://github.com/bakerkj/ha-vigil/commit/61aeee93717f12be2126601025eaca7881616f14))
+
 ## [0.0.10](https://github.com/bakerkj/ha-vigil/compare/v0.0.9...v0.0.10) (2026-09-03)
 
 
