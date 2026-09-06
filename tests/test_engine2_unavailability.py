@@ -680,3 +680,30 @@ def test_extended_grace_defers_then_fires_for_listed_device() -> None:
         extended_grace_device_ids=listed,
     )
     assert len(issues) == 1
+
+
+def test_wake_on_lan_device_never_flagged_offline() -> None:
+    """wake_on_lan targets are off by design — DOWN is normal, never an issue.
+
+    A pre-seeded (recorder-resolved) record must be LEFT intact, not popped:
+    popping would make async_seed_downtime re-query the recorder every cycle.
+    """
+    now = dt_util.utcnow()
+    since = now - timedelta(hours=6)
+    t = make_device_tuple(
+        device_id="wol",
+        config_entry_domain="wake_on_lan",
+        connectivity_state=ConnectivityState.DOWN,
+        all_unavailable=True,
+        any_unavailable=True,
+        data_entity_ids=set(),
+        offline_since=since,
+    )
+    issues, store = _detect(
+        [t],
+        unavailable_since={"wol": since},
+        recorder_resolved={"wol"},
+        now=now,
+    )
+    assert issues == []
+    assert store["wol"] == since  # record preserved (recorder_resolved persists)
