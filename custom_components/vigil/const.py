@@ -92,6 +92,11 @@ CONF_EXCLUDED_ENTITY_IDS = "excluded_entity_ids"
 CONF_EXCLUDED_DEVICE_IDS = "excluded_device_ids"
 CONF_EXCLUDED_INTEGRATIONS = "excluded_integrations"
 CONF_BATTERY_GRACE_MULTIPLIER = "battery_device_grace_multiplier"
+# Intermittent / on-demand devices (a WiFi scale, a robot mower): flag offline
+# only after they've been down longer than ``extended_offline_grace_hours``, not
+# the normal grace. Defers detection past the window — it does not silence.
+CONF_EXTENDED_GRACE_DEVICE_IDS = "extended_grace_device_ids"
+CONF_EXTENDED_GRACE_HOURS = "extended_offline_grace_hours"
 CONF_ENABLE_NOTIFICATION = "enable_notification"
 # Whether Engine 5 polls the Supervisor for app health each cycle.
 CONF_ENABLE_APP_MONITORING = "enable_app_monitoring"
@@ -118,6 +123,8 @@ DEFAULT_GRACE_PERIOD_MINUTES = 15
 DEFAULT_STALENESS_MULTIPLIER = 3.0
 DEFAULT_STARTUP_IGNORE_SECONDS = 300
 DEFAULT_BATTERY_GRACE_MULTIPLIER = 2.0
+# Grace applied to devices listed in CONF_EXTENDED_GRACE_DEVICE_IDS (hours).
+DEFAULT_EXTENDED_GRACE_HOURS = 48.0
 # 0 = AUTO: match the recorder's own ``purge_keep_days`` (read at runtime), so
 # reconstruction spans exactly the retained history. An explicit 1..MAX overrides;
 # RECORDER_LOOKBACK_DAYS (7) is the fallback if retention can't be read.
@@ -142,6 +149,8 @@ MIN_STARTUP_IGNORE_SECONDS = 0
 MAX_STARTUP_IGNORE_SECONDS = 3600
 MIN_BATTERY_GRACE_MULTIPLIER = 1.0
 MAX_BATTERY_GRACE_MULTIPLIER = 10.0
+MIN_EXTENDED_GRACE_HOURS = 1.0
+MAX_EXTENDED_GRACE_HOURS = 720.0  # 30 days
 MIN_RECORDER_LOOKBACK_DAYS = 0  # 0 = auto (match recorder purge_keep_days)
 MAX_RECORDER_LOOKBACK_DAYS = 90
 

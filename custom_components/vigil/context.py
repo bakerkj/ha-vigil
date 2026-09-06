@@ -54,6 +54,10 @@ class CycleContext:
     config_store: VigilConfigStore
     grace_period: timedelta
     battery_multiplier: float
+    # Devices that only flag offline after being down longer than
+    # ``extended_grace`` (intermittent/on-demand hardware) — see Engine 2.
+    extended_grace: timedelta
+    extended_grace_device_ids: frozenset[str]
     staleness_multiplier: float
     # Engine-5 Supervisor app snapshot: empty on non-Supervised installs, None
     # when the Supervisor read failed this cycle (Engine 5 is then skipped).

@@ -61,6 +61,8 @@ def _detect(
     now: datetime | None = None,
     boot_time: datetime | None = None,
     battery_mult: float = BATTERY_MULT,
+    extended_grace: timedelta | None = None,
+    extended_grace_device_ids: frozenset[str] = frozenset(),
 ) -> tuple[list[VigilIssue], dict[str, datetime]]:
     lb = lower_bound or set()
     rr = recorder_resolved or set()
@@ -75,6 +77,8 @@ def _detect(
         flagged_entry_ids=flagged or set(),
         grace_period=GRACE,
         battery_multiplier=battery_mult,
+        extended_grace=extended_grace,
+        extended_grace_device_ids=extended_grace_device_ids,
         downtime=downtime,
         now=now or dt_util.utcnow(),
         boot_time=boot_time,
@@ -633,3 +637,46 @@ def test_downtime_recorder_resolved_round_trips() -> None:
         {"dev3": {"since": now.isoformat(), "is_lower_bound": False}}
     )
     assert legacy["dev3"].recorder_resolved is False
+
+
+def test_extended_grace_defers_then_fires_for_listed_device() -> None:
+    """A device in the extended-grace set only flags after the LONG window.
+
+    The scale case: intermittent by design, so a normal-grace outage is ignored,
+    but a genuinely dead device (past the extended window) still surfaces — this
+    defers detection, it does not silence it.
+    """
+    now = dt_util.utcnow()
+    ext = timedelta(hours=48)
+    listed = frozenset({"scale"})
+
+    # Offline 20 min — past the normal 15-min grace, but well within 48h.
+    issues, _ = _detect(
+        [_tuple(device_id="scale")],
+        unavailable_since={"scale": now - timedelta(minutes=20)},
+        now=now,
+        extended_grace=ext,
+        extended_grace_device_ids=listed,
+    )
+    assert issues == []  # deferred
+
+    # Offline 49h — past the 48h extended grace → flagged.
+    issues, _ = _detect(
+        [_tuple(device_id="scale")],
+        unavailable_since={"scale": now - timedelta(hours=49)},
+        now=now,
+        extended_grace=ext,
+        extended_grace_device_ids=listed,
+    )
+    assert len(issues) == 1
+    assert issues[0].kind == IssueKind.DEVICE_OFFLINE_CONFIRMED
+
+    # A device NOT in the set still uses the normal 15-min grace.
+    issues, _ = _detect(
+        [_tuple(device_id="other")],
+        unavailable_since={"other": now - timedelta(minutes=20)},
+        now=now,
+        extended_grace=ext,
+        extended_grace_device_ids=listed,
+    )
+    assert len(issues) == 1

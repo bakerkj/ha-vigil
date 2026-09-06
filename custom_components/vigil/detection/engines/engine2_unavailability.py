@@ -100,6 +100,8 @@ def detect_unavailability_issues(
     now: datetime,
     boot_time: datetime | None = None,
     known_device_ids: set[str] | None = None,
+    extended_grace: timedelta | None = None,
+    extended_grace_device_ids: frozenset[str] = frozenset(),
 ) -> list[VigilIssue]:
     """Engine 2 — flag devices whose entities are all unavailable past grace.
 
@@ -123,7 +125,11 @@ def detect_unavailability_issues(
                 t.device_id, DowntimeRecord(since=t.offline_since or now)
             )
 
-            if t.is_battery or t.connectivity_state == ConnectivityState.UNKNOWN:
+            if extended_grace is not None and t.device_id in extended_grace_device_ids:
+                # Intermittent / on-demand by design (e.g. a WiFi scale that
+                # sleeps between weigh-ins): only flag after a long outage.
+                effective_grace = extended_grace
+            elif t.is_battery or t.connectivity_state == ConnectivityState.UNKNOWN:
                 effective_grace = grace_period * battery_multiplier
             else:
                 effective_grace = grace_period
