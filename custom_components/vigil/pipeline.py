@@ -53,6 +53,8 @@ async def run_detection(ctx: CycleContext) -> VigilData:
         flagged_entry_ids=flagged_entry_ids,
         grace_period=ctx.grace_period,
         battery_multiplier=ctx.battery_multiplier,
+        extended_grace=ctx.extended_grace,
+        extended_grace_device_ids=ctx.extended_grace_device_ids,
         downtime=ctx.downtime,
         now=ctx.now,
         boot_time=ctx.boot_time,

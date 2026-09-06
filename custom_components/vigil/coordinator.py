@@ -37,6 +37,8 @@ from .const import (
     CONF_BATTERY_GRACE_MULTIPLIER,
     CONF_ENABLE_APP_MONITORING,
     CONF_ENABLE_NOTIFICATION,
+    CONF_EXTENDED_GRACE_DEVICE_IDS,
+    CONF_EXTENDED_GRACE_HOURS,
     CONF_GRACE_PERIOD_MINUTES,
     CONF_RECORDER_LOOKBACK_DAYS,
     CONF_SCAN_INTERVAL,
@@ -47,6 +49,7 @@ from .const import (
     DEFAULT_BATTERY_GRACE_MULTIPLIER,
     DEFAULT_ENABLE_APP_MONITORING,
     DEFAULT_ENABLE_NOTIFICATION,
+    DEFAULT_EXTENDED_GRACE_HOURS,
     DEFAULT_GRACE_PERIOD_MINUTES,
     DEFAULT_RECORDER_LOOKBACK_DAYS,
     DEFAULT_SCAN_INTERVAL,
@@ -340,6 +343,14 @@ class VigilCoordinator(DataUpdateCoordinator[VigilData]):
             ),
             battery_multiplier=self._opt_float(
                 CONF_BATTERY_GRACE_MULTIPLIER, DEFAULT_BATTERY_GRACE_MULTIPLIER
+            ),
+            extended_grace=timedelta(
+                hours=self._opt_float(
+                    CONF_EXTENDED_GRACE_HOURS, DEFAULT_EXTENDED_GRACE_HOURS
+                )
+            ),
+            extended_grace_device_ids=frozenset(
+                self._options.get(CONF_EXTENDED_GRACE_DEVICE_IDS) or []
             ),
             staleness_multiplier=self._opt_float(
                 CONF_STALENESS_MULTIPLIER, DEFAULT_STALENESS_MULTIPLIER
