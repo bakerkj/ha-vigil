@@ -233,6 +233,11 @@ AVAILABILITY_IGNORED_DOMAINS = frozenset(
     {"update", "button", "device_tracker", "notify"}
 )
 
+# Integrations whose devices are off BY DESIGN (never a fault): a wake_on_lan
+# target is powered off until woken, so its DOWN reading is its normal state.
+# Matched on the device's config-entry domain and skipped by Engine 2.
+OFFLINE_EXEMPT_INTEGRATIONS = frozenset({"wake_on_lan"})
+
 # Annotation platforms are deployment-specific, supplied via the user option
 # CONF_AVAILABILITY_IGNORED_PLATFORMS rather than hardcoded here.
 

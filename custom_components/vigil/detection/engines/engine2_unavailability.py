@@ -8,7 +8,11 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant
 
-from ...const import RESTART_ARTIFACT_WINDOW_SECONDS, STATE_DOWNTIME_KEY
+from ...const import (
+    OFFLINE_EXEMPT_INTEGRATIONS,
+    RESTART_ARTIFACT_WINDOW_SECONDS,
+    STATE_DOWNTIME_KEY,
+)
 from ...history.recorder import async_recorder_last_good
 from ...models import (
     ConnectivityState,
@@ -118,6 +122,12 @@ def detect_unavailability_issues(
             downtime.pop(t.device_id, None)
             continue
 
+        # Off-by-design integrations (e.g. wake_on_lan) are never "offline".
+        # Don't pop: leave any record inert so its recorder_resolved flag
+        # persists — popping would make async_seed_downtime re-query forever.
+        if t.config_entry_domain in OFFLINE_EXEMPT_INTEGRATIONS:
+            continue
+
         if is_offline(t):
             # Seed from the real transition time so an already-offline device is
             # reported immediately, not after a fresh grace from first observation.
@@ -219,6 +229,7 @@ async def async_seed_downtime(
         for t in tuples
         if is_offline(t)
         and t.device_id not in observed_up
+        and t.config_entry_domain not in OFFLINE_EXEMPT_INTEGRATIONS
         and not ((rec := downtime.get(t.device_id)) and rec.recorder_resolved)
     ]
     if not pending:
