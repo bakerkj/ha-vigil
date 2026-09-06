@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.12](https://github.com/bakerkj/ha-vigil/compare/v0.0.11...v0.0.12) (2026-09-06)
+
+
+### Features
+
+* never flag off-by-design integrations (wake_on_lan) offline ([#86](https://github.com/bakerkj/ha-vigil/issues/86)) ([75d8b86](https://github.com/bakerkj/ha-vigil/commit/75d8b86394056d67f86bf00f55660333678eea5b))
+* per-device extended offline grace for intermittent devices ([#85](https://github.com/bakerkj/ha-vigil/issues/85)) ([5914f55](https://github.com/bakerkj/ha-vigil/commit/5914f558fa86cccce2397be6d7f0788ba503d946))
+
 ## [0.0.11](https://github.com/bakerkj/ha-vigil/compare/v0.0.10...v0.0.11) (2026-09-05)
 
 
