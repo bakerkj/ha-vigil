@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.13](https://github.com/bakerkj/ha-vigil/compare/v0.0.12...v0.0.13) (2026-09-11)
+
+
+### Miscellaneous Chores
+
+* **deps:** update anthropics/claude-code-action action to v1.0.217 ([#88](https://github.com/bakerkj/ha-vigil/issues/88)) ([18c9f0e](https://github.com/bakerkj/ha-vigil/commit/18c9f0e9dc87c1a44ffc68fe512aabcc059b0dfb))
+
 ## [0.0.12](https://github.com/bakerkj/ha-vigil/compare/v0.0.11...v0.0.12) (2026-09-06)
 
 
