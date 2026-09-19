@@ -11,7 +11,7 @@ permissions:
 jobs:
   versions:
     name: ${{ matrix.name }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     strategy:
       # Report both results; a type error that only appears on one HA version
@@ -59,7 +59,7 @@ jobs:
   mypy:
     needs: versions
     if: always()
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Mirror the matrix result
         run: |
