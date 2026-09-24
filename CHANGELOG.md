@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.0.13](https://github.com/bakerkj/ha-vigil/compare/v0.0.12...v0.0.13) (2026-09-24)
+
+
+### Bug Fixes
+
+* **renovate:** don't duplicate runs-on detection with the built-in manager ([#94](https://github.com/bakerkj/ha-vigil/issues/94)) ([862b723](https://github.com/bakerkj/ha-vigil/commit/862b723926e88f1785a4458d5dffcd0adeb33c35))
+
+
+### Miscellaneous Chores
+
+* **deps:** update anthropics/claude-code-action action to v1.0.217 ([#88](https://github.com/bakerkj/ha-vigil/issues/88)) ([18c9f0e](https://github.com/bakerkj/ha-vigil/commit/18c9f0e9dc87c1a44ffc68fe512aabcc059b0dfb))
+* **deps:** update anthropics/claude-code-action action to v1.0.226 ([#103](https://github.com/bakerkj/ha-vigil/issues/103)) ([b05f4cd](https://github.com/bakerkj/ha-vigil/commit/b05f4cdd9ca199d8aefcf9346b4c76d6b088fcb6))
+* **deps:** update dependency eslint to v10.11.0 ([#100](https://github.com/bakerkj/ha-vigil/issues/100)) ([c64253e](https://github.com/bakerkj/ha-vigil/commit/c64253e2ddd409f9ce1c8ef1c93827e88cf6daec))
+* **deps:** update dependency jsdom to v30.1.0 ([#101](https://github.com/bakerkj/ha-vigil/issues/101)) ([9fa084b](https://github.com/bakerkj/ha-vigil/commit/9fa084b1cdb12881f739d96ed63d782b2f1fe64b))
+* **deps:** update dependency jsdom to v30.1.1 ([#108](https://github.com/bakerkj/ha-vigil/issues/108)) ([62e7dfa](https://github.com/bakerkj/ha-vigil/commit/62e7dfa50f9240e240d794f262087a755c054cfb))
+* **deps:** update dependency ubuntu to v26 ([#96](https://github.com/bakerkj/ha-vigil/issues/96)) ([269f468](https://github.com/bakerkj/ha-vigil/commit/269f4686f0c9017740b5e1bb113790e3f3113d4f))
+* **deps:** update dependency uv to v0.12.14 ([#90](https://github.com/bakerkj/ha-vigil/issues/90)) ([31e58e4](https://github.com/bakerkj/ha-vigil/commit/31e58e42b4bf47565659c48fd9ce632d5aee86ae))
+* **deps:** update dependency uv to v0.12.15 ([#92](https://github.com/bakerkj/ha-vigil/issues/92)) ([ed75783](https://github.com/bakerkj/ha-vigil/commit/ed75783d1e72e0e408f5e24081b0a7af9fbf1887))
+* **deps:** update dependency uv to v0.12.17 ([#98](https://github.com/bakerkj/ha-vigil/issues/98)) ([f6367f2](https://github.com/bakerkj/ha-vigil/commit/f6367f215de7eefe84dcedf5144f40e57e301e2d))
+* **deps:** update dependency uv to v0.12.18 ([#109](https://github.com/bakerkj/ha-vigil/issues/109)) ([444d0bd](https://github.com/bakerkj/ha-vigil/commit/444d0bdb18182d52761c542f2395a8376928b428))
+* **deps:** update dependency vitest to v5.0.1 ([#93](https://github.com/bakerkj/ha-vigil/issues/93)) ([77179c6](https://github.com/bakerkj/ha-vigil/commit/77179c6338611d093aff01cf575a9e1696b715fd))
+* **deps:** update github-actions ([#105](https://github.com/bakerkj/ha-vigil/issues/105)) ([3b50d9b](https://github.com/bakerkj/ha-vigil/commit/3b50d9b0f981d6333d8f8cdb82c449f6407254d3))
+* **deps:** update github-actions ([#107](https://github.com/bakerkj/ha-vigil/issues/107)) ([efb8d42](https://github.com/bakerkj/ha-vigil/commit/efb8d42900c04b5cf33302261d677f68bafba7c2))
+* **deps:** update github-actions ([#91](https://github.com/bakerkj/ha-vigil/issues/91)) ([6800a2a](https://github.com/bakerkj/ha-vigil/commit/6800a2a7d4e3570188ffb800798c45e10bde86eb))
+* **deps:** update pre-commit hook alessandrojcm/commitlint-pre-commit-hook to v9.27.0 ([#104](https://github.com/bakerkj/ha-vigil/issues/104)) ([1f39e8c](https://github.com/bakerkj/ha-vigil/commit/1f39e8c8d258ec6e8df498debc0452abd18578aa))
+* **deps:** update pre-commit hook astral-sh/ruff-pre-commit to v0.16.8 ([#99](https://github.com/bakerkj/ha-vigil/issues/99)) ([48aea04](https://github.com/bakerkj/ha-vigil/commit/48aea0493d306564ba1d765252fa96edad7d4126))
+* **deps:** update pre-commit hook rbubley/mirrors-prettier to v3.9.8 ([#102](https://github.com/bakerkj/ha-vigil/issues/102)) ([abd2ee6](https://github.com/bakerkj/ha-vigil/commit/abd2ee658e2777ca1803101754eb044b1c558613))
+* **deps:** update pre-commit hooks ([#106](https://github.com/bakerkj/ha-vigil/issues/106)) ([1debf12](https://github.com/bakerkj/ha-vigil/commit/1debf12f906bf8d457f3434dc91567090431b122))
+* **deps:** update pre-commit hooks ([#97](https://github.com/bakerkj/ha-vigil/issues/97)) ([7ccbd0e](https://github.com/bakerkj/ha-vigil/commit/7ccbd0e0646c9f0e4a1608d881fded1c6d897f45))
+* switch actionlint pre-commit hook from rhysd (stale) to kjanat fork ([#95](https://github.com/bakerkj/ha-vigil/issues/95)) ([75c58b8](https://github.com/bakerkj/ha-vigil/commit/75c58b8937503eefdf736396a0be77152f93eb9a))
+
 ## [0.0.12](https://github.com/bakerkj/ha-vigil/compare/v0.0.11...v0.0.12) (2026-09-06)
 
 
