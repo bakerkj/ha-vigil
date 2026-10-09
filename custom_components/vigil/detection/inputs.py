@@ -411,9 +411,16 @@ def _device_entry_id(device: DeviceEntry) -> str | None:
 
     `config_entry_id` is the canonical attribute on HA 2026.8+. On 2026.6 and
     2026.7 only the old `primary_config_entry` field exists; fall back to it
-    there. Both branches avoid the 2026.10 deprecated-property stack walk:
-    `getattr` short-circuits before touching `primary_config_entry` on versions
-    where it IS a deprecated property.
+    there. On 2026.10 `primary_config_entry` is a deprecated property that
+    stack-walks; the `or` short-circuits whenever `config_entry_id` is set
+    (which is every device with an entry, i.e. all real devices).
+
+    For composite devices on HA 2026.8/2026.9 this returns the per-record
+    split `config_entry_id` rather than the composite's canonical primary.
+    Vigil's downstream caller treats this as the device's current home, which
+    is the right answer for a split-off record; on 2026.10 HA's own
+    `primary_config_entry` property already returns `config_entry_id`, so the
+    two converge.
     """
     return getattr(device, "config_entry_id", None) or getattr(
         device, "primary_config_entry", None
@@ -450,12 +457,17 @@ def _primary_config_entry(
         return hass.config_entries.async_get_entry(
             max(sorted(owners), key=owners.__getitem__)
         )
-    # Composite devices still carry multiple entry ids; everything else now
-    # has exactly one. (HA 2026.10 stack-walks on the deprecated multi-entry
-    # getter, so avoid it on non-composites.)
+    # Enumerate the device's config entries. Three shapes:
+    #   - HA 2026.6/2026.7: `config_entry_id` absent, `config_entries` can be
+    #     multi-valued; iterate it (no stack walk on these versions).
+    #   - HA 2026.8+ composite: iterate `config_entries` (HA skips the
+    #     deprecation report when `is_composite_device` is True).
+    #   - HA 2026.8+ non-composite: a device has exactly one entry id;
+    #     reading `config_entries` on 2026.10 triggers a stack walk, so skip.
+    pre_2026_8 = not hasattr(device, "config_entry_id")
     eids = (
         sorted(device.config_entries)
-        if getattr(device, "is_composite_device", False)
+        if pre_2026_8 or getattr(device, "is_composite_device", False)
         else ([ha_primary] if ha_primary else [])
     )
     non_annotation = [

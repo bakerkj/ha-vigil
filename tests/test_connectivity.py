@@ -668,6 +668,26 @@ def test_device_entry_id_none_when_device_has_no_entry() -> None:
     assert _device_entry_id(device) is None  # type: ignore[arg-type]
 
 
+async def test_primary_config_entry_old_ha_falls_through_annotation(
+    hass: HomeAssistant,
+) -> None:
+    """On HA 2026.6/2026.7 (no `config_entry_id`), a device with multiple
+    `config_entries` where the primary is annotation must fall through to the
+    non-annotation sibling — same as the pre-fix behaviour, which iterated
+    `device.config_entries`."""
+    annotation = MockConfigEntry(domain="node_fleet")
+    annotation.add_to_hass(hass)
+    real = MockConfigEntry(domain="node")
+    real.add_to_hass(hass)
+    # No `config_entry_id` and no `is_composite_device` -> pre-2026.8 shape.
+    device = SimpleNamespace(
+        primary_config_entry=annotation.entry_id,
+        config_entries={annotation.entry_id, real.entry_id},
+    )
+    result = _primary_config_entry(hass, device, [], frozenset({"node_fleet"}))  # type: ignore[arg-type]
+    assert result is not None and result.domain == "node"
+
+
 async def test_mac_router_tracker_away_resolves_down(hass: HomeAssistant) -> None:
     """A same-MAC router device_tracker reporting 'not_home' resolves DOWN (P4)."""
     entry = _entry(hass, "demo", "Demo")
