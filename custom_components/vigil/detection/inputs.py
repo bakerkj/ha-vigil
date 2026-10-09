@@ -396,10 +396,10 @@ def _device_keys(
 
 @callback
 def _device_primary_domain(hass: HomeAssistant, device: DeviceEntry) -> str | None:
-    """The domain of a device's HA-declared primary_config_entry, or None."""
-    if device.primary_config_entry is None:
+    """The domain of a device's HA-declared config entry, or None."""
+    if device.config_entry_id is None:
         return None
-    entry = hass.config_entries.async_get_entry(device.primary_config_entry)
+    entry = hass.config_entries.async_get_entry(device.config_entry_id)
     return entry.domain if entry is not None else None
 
 
@@ -411,10 +411,10 @@ def _primary_config_entry(
 ) -> ConfigEntry | None:
     """The config entry a device is primarily attributed to — its real "home".
 
-    Trusts HA's ``primary_config_entry`` unless it names an annotation platform;
+    Trusts HA's declared config entry unless it names an annotation platform;
     otherwise the config entry owning the most non-annotation entities wins.
     """
-    ha_primary = device.primary_config_entry
+    ha_primary = device.config_entry_id
     ha_entry = (
         hass.config_entries.async_get_entry(ha_primary)
         if ha_primary is not None
@@ -433,18 +433,24 @@ def _primary_config_entry(
         return hass.config_entries.async_get_entry(
             max(sorted(owners), key=owners.__getitem__)
         )
-    # Prefer any non-annotation entry the device is linked to; only an entirely
-    # annotation device stays attributed to that platform.
-    non_annotation = []
-    for eid in device.config_entries:
-        entry = hass.config_entries.async_get_entry(eid)
-        if entry is not None and entry.domain not in ignored_platforms:
-            non_annotation.append(eid)
-    non_annotation.sort()
+    # Composite devices still carry multiple entry ids; everything else now
+    # has exactly one. (HA 2026.10 stack-walks on the deprecated multi-entry
+    # getter, so avoid it on non-composites.)
+    eids = (
+        sorted(device.config_entries)
+        if getattr(device, "is_composite_device", False)
+        else ([ha_primary] if ha_primary else [])
+    )
+    non_annotation = [
+        eid
+        for eid in eids
+        if (entry := hass.config_entries.async_get_entry(eid)) is not None
+        and entry.domain not in ignored_platforms
+    ]
     entry_id = (
         non_annotation[0]
         if non_annotation
-        else (ha_primary or next(iter(sorted(device.config_entries)), None))
+        else (ha_primary or (eids[0] if eids else None))
     )
     if entry_id is None:
         return None

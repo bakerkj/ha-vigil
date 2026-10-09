@@ -637,8 +637,9 @@ async def test_primary_config_entry_resolution(
         entry.add_to_hass(hass)
         made[domain] = entry
     device = SimpleNamespace(
-        primary_config_entry=made[primary].entry_id,
+        config_entry_id=made[primary].entry_id,
         config_entries={made[d].entry_id for d in entries},
+        is_composite_device=len(entries) > 1,
     )
     reg = [
         SimpleNamespace(config_entry_id=made[d].entry_id, platform=d)
