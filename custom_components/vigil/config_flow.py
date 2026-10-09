@@ -270,7 +270,11 @@ class VigilConfigFlow(ConfigFlow, domain=DOMAIN):
             self._abort_if_unique_id_configured()
             return self.async_create_entry(title=NAME, data=user_input)
 
-        return self.async_show_form(step_id="user", data_schema=_build_schema(DEFAULTS))
+        # HA 2026.10 typed data_schema as probatio.Schema; runtime still accepts vol.
+        return self.async_show_form(
+            step_id="user",
+            data_schema=_build_schema(DEFAULTS),  # type: ignore[arg-type,unused-ignore]
+        )
 
     @staticmethod
     @callback
@@ -290,4 +294,7 @@ class VigilOptionsFlow(OptionsFlow):
             return self.async_create_entry(title="", data=user_input)
 
         values = merged_options(self.config_entry.data, self.config_entry.options)
-        return self.async_show_form(step_id="init", data_schema=_build_schema(values))
+        return self.async_show_form(
+            step_id="init",
+            data_schema=_build_schema(values),  # type: ignore[arg-type,unused-ignore]
+        )
