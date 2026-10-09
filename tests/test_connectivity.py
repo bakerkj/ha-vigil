@@ -19,6 +19,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 import custom_components.vigil.detection.inputs as conn_mod
 from custom_components.vigil.detection.engines.engine2_unavailability import is_offline
 from custom_components.vigil.detection.inputs import (
+    _device_entry_id,
     _primary_config_entry,
     build_device_tuples,
 )
@@ -637,8 +638,9 @@ async def test_primary_config_entry_resolution(
         entry.add_to_hass(hass)
         made[domain] = entry
     device = SimpleNamespace(
-        primary_config_entry=made[primary].entry_id,
+        config_entry_id=made[primary].entry_id,
         config_entries={made[d].entry_id for d in entries},
+        is_composite_device=len(entries) > 1,
     )
     reg = [
         SimpleNamespace(config_entry_id=made[d].entry_id, platform=d)
@@ -646,6 +648,44 @@ async def test_primary_config_entry_resolution(
     ]
     result = _primary_config_entry(hass, device, reg, frozenset(ignored))  # type: ignore[arg-type]
     assert result is not None and result.domain == expected
+
+
+def test_device_entry_id_prefers_new_attribute() -> None:
+    """HA 2026.8+ shape: `config_entry_id` is set and wins."""
+    device = SimpleNamespace(config_entry_id="new", primary_config_entry="legacy")
+    assert _device_entry_id(device) == "new"  # type: ignore[arg-type]
+
+
+def test_device_entry_id_falls_back_on_old_ha() -> None:
+    """HA 2026.6/2026.7 shape: no `config_entry_id`, fall back to `primary_config_entry`."""
+    device = SimpleNamespace(primary_config_entry="legacy", config_entries={"legacy"})
+    assert _device_entry_id(device) == "legacy"  # type: ignore[arg-type]
+
+
+def test_device_entry_id_none_when_device_has_no_entry() -> None:
+    """A device with neither attribute (synthetic) returns None cleanly."""
+    device = SimpleNamespace()
+    assert _device_entry_id(device) is None  # type: ignore[arg-type]
+
+
+async def test_primary_config_entry_old_ha_falls_through_annotation(
+    hass: HomeAssistant,
+) -> None:
+    """On HA 2026.6/2026.7 (no `config_entry_id`), a device with multiple
+    `config_entries` where the primary is annotation must fall through to the
+    non-annotation sibling — same as the pre-fix behaviour, which iterated
+    `device.config_entries`."""
+    annotation = MockConfigEntry(domain="node_fleet")
+    annotation.add_to_hass(hass)
+    real = MockConfigEntry(domain="node")
+    real.add_to_hass(hass)
+    # No `config_entry_id` and no `is_composite_device` -> pre-2026.8 shape.
+    device = SimpleNamespace(
+        primary_config_entry=annotation.entry_id,
+        config_entries={annotation.entry_id, real.entry_id},
+    )
+    result = _primary_config_entry(hass, device, [], frozenset({"node_fleet"}))  # type: ignore[arg-type]
+    assert result is not None and result.domain == "node"
 
 
 async def test_mac_router_tracker_away_resolves_down(hass: HomeAssistant) -> None:

@@ -398,11 +398,33 @@ def _device_keys(
 
 @callback
 def _device_primary_domain(hass: HomeAssistant, device: DeviceEntry) -> str | None:
-    """The domain of a device's HA-declared primary_config_entry, or None."""
-    if device.primary_config_entry is None:
+    """The domain of a device's HA-declared config entry, or None."""
+    entry_id = _device_entry_id(device)
+    if entry_id is None:
         return None
-    entry = hass.config_entries.async_get_entry(device.primary_config_entry)
+    entry = hass.config_entries.async_get_entry(entry_id)
     return entry.domain if entry is not None else None
+
+
+def _device_entry_id(device: DeviceEntry) -> str | None:
+    """The device's primary config-entry id, portable across HA versions.
+
+    `config_entry_id` is the canonical attribute on HA 2026.8+. On 2026.6 and
+    2026.7 only the old `primary_config_entry` field exists; fall back to it
+    there. On 2026.10 `primary_config_entry` is a deprecated property that
+    stack-walks; the `or` short-circuits whenever `config_entry_id` is set
+    (which is every device with an entry, i.e. all real devices).
+
+    For composite devices on HA 2026.8/2026.9 this returns the per-record
+    split `config_entry_id` rather than the composite's canonical primary.
+    Vigil's downstream caller treats this as the device's current home, which
+    is the right answer for a split-off record; on 2026.10 HA's own
+    `primary_config_entry` property already returns `config_entry_id`, so the
+    two converge.
+    """
+    return getattr(device, "config_entry_id", None) or getattr(
+        device, "primary_config_entry", None
+    )
 
 
 def _primary_config_entry(
@@ -413,10 +435,10 @@ def _primary_config_entry(
 ) -> ConfigEntry | None:
     """The config entry a device is primarily attributed to — its real "home".
 
-    Trusts HA's ``primary_config_entry`` unless it names an annotation platform;
+    Trusts HA's declared config entry unless it names an annotation platform;
     otherwise the config entry owning the most non-annotation entities wins.
     """
-    ha_primary = device.primary_config_entry
+    ha_primary = _device_entry_id(device)
     ha_entry = (
         hass.config_entries.async_get_entry(ha_primary)
         if ha_primary is not None
@@ -435,18 +457,29 @@ def _primary_config_entry(
         return hass.config_entries.async_get_entry(
             max(sorted(owners), key=owners.__getitem__)
         )
-    # Prefer any non-annotation entry the device is linked to; only an entirely
-    # annotation device stays attributed to that platform.
-    non_annotation = []
-    for eid in device.config_entries:
-        entry = hass.config_entries.async_get_entry(eid)
-        if entry is not None and entry.domain not in ignored_platforms:
-            non_annotation.append(eid)
-    non_annotation.sort()
+    # Enumerate the device's config entries. Three shapes:
+    #   - HA 2026.6/2026.7: `config_entry_id` absent, `config_entries` can be
+    #     multi-valued; iterate it (no stack walk on these versions).
+    #   - HA 2026.8+ composite: iterate `config_entries` (HA skips the
+    #     deprecation report when `is_composite_device` is True).
+    #   - HA 2026.8+ non-composite: a device has exactly one entry id;
+    #     reading `config_entries` on 2026.10 triggers a stack walk, so skip.
+    pre_2026_8 = not hasattr(device, "config_entry_id")
+    eids = (
+        sorted(device.config_entries)
+        if pre_2026_8 or getattr(device, "is_composite_device", False)
+        else ([ha_primary] if ha_primary else [])
+    )
+    non_annotation = [
+        eid
+        for eid in eids
+        if (entry := hass.config_entries.async_get_entry(eid)) is not None
+        and entry.domain not in ignored_platforms
+    ]
     entry_id = (
         non_annotation[0]
         if non_annotation
-        else (ha_primary or next(iter(sorted(device.config_entries)), None))
+        else (ha_primary or (eids[0] if eids else None))
     )
     if entry_id is None:
         return None
