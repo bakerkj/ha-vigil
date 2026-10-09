@@ -399,10 +399,25 @@ def _device_keys(
 @callback
 def _device_primary_domain(hass: HomeAssistant, device: DeviceEntry) -> str | None:
     """The domain of a device's HA-declared config entry, or None."""
-    if device.config_entry_id is None:
+    entry_id = _device_entry_id(device)
+    if entry_id is None:
         return None
-    entry = hass.config_entries.async_get_entry(device.config_entry_id)
+    entry = hass.config_entries.async_get_entry(entry_id)
     return entry.domain if entry is not None else None
+
+
+def _device_entry_id(device: DeviceEntry) -> str | None:
+    """The device's primary config-entry id, portable across HA versions.
+
+    `config_entry_id` is the canonical attribute on HA 2026.8+. On 2026.6 and
+    2026.7 only the old `primary_config_entry` field exists; fall back to it
+    there. Both branches avoid the 2026.10 deprecated-property stack walk:
+    `getattr` short-circuits before touching `primary_config_entry` on versions
+    where it IS a deprecated property.
+    """
+    return getattr(device, "config_entry_id", None) or getattr(
+        device, "primary_config_entry", None
+    )
 
 
 def _primary_config_entry(
@@ -416,7 +431,7 @@ def _primary_config_entry(
     Trusts HA's declared config entry unless it names an annotation platform;
     otherwise the config entry owning the most non-annotation entities wins.
     """
-    ha_primary = device.config_entry_id
+    ha_primary = _device_entry_id(device)
     ha_entry = (
         hass.config_entries.async_get_entry(ha_primary)
         if ha_primary is not None
