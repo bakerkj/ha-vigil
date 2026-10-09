@@ -10,7 +10,9 @@ from collections import Counter
 from collections.abc import Mapping, Sequence
 from types import MappingProxyType
 
-from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+from homeassistant.components.binary_sensor import (  # type: ignore[attr-defined,unused-ignore]
+    BinarySensorDeviceClass,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_DEVICE_CLASS,
