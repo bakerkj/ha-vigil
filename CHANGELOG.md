@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.0.14](https://github.com/bakerkj/ha-vigil/compare/v0.0.13...v0.0.14) (2026-10-10)
+
+
+### Miscellaneous Chores
+
+* **deps:** update dependency uv to v0.13.0 ([#131](https://github.com/bakerkj/ha-vigil/issues/131)) ([4be6ff5](https://github.com/bakerkj/ha-vigil/commit/4be6ff55626a170aa6f7d0fd814f2947199d3cc3))
+* **deps:** update github-actions ([#128](https://github.com/bakerkj/ha-vigil/issues/128)) ([aa43f98](https://github.com/bakerkj/ha-vigil/commit/aa43f98ca4bf8ec59aca373a4b27432aba415d70))
+* **deps:** update pre-commit hook astral-sh/ruff-pre-commit to v0.17.0 ([#130](https://github.com/bakerkj/ha-vigil/issues/130)) ([61f5bb8](https://github.com/bakerkj/ha-vigil/commit/61f5bb807b5314dd1b1eeb6f5159cedcfef621c9))
+
 ## [0.0.13](https://github.com/bakerkj/ha-vigil/compare/v0.0.12...v0.0.13) (2026-10-09)
 
 
