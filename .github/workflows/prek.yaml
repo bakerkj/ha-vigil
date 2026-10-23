@@ -27,7 +27,7 @@ jobs:
       # mypy and gen-frontend-types are skipped here (both need the full HA
       # dependency env; the dedicated mypy.yaml / gen-types.yaml workflows run
       # them). The other JS hooks run against the prek-action's own node.
-      - uses: j178/prek-action@af4d4fcb6922b8e6f65c0426947125fcc38794ce # v3.0.2
+      - uses: j178/prek-action@44924fe9ef4a6f88253c4b6b1bf11c689d3ce53d # v3.1.0
         env:
           SKIP: no-commit-to-branch,mypy,gen-frontend-types
         with:
