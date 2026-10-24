@@ -66,8 +66,12 @@ jobs:
         with:
           python-version-file: .python-version
 
+      - name: Verify uv.lock matches pyproject.toml
+        run: uv lock --check
+      # --no-default-groups: uv treats `dev` as a default group, so plain
+      # `--group test` would still pull mypy + pydantic into the test matrix.
       - name: Install the locked environment
-        run: uv sync
+        run: uv sync --no-default-groups --group test --frozen
 
       # Imperative, so it overrides the locked homeassistant in the venv without
       # having to relax the project's pin. The plugin is named unpinned so uv
