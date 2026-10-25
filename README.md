@@ -87,7 +87,7 @@ persistent notification is opt-in (see the note below).
 
 ## Installation
 
-**Requirements:** Home Assistant **2026.6.0** or newer (running on Python
+**Requirements:** Home Assistant **2026.7.0** or newer (running on Python
 **3.14.2+**). Vigil uses Python 3.14 syntax and will not load on older cores.
 
 ### HACS (recommended)
