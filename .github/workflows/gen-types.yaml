@@ -27,7 +27,9 @@ jobs:
         with:
           node-version: "24"
       - run: npm ci
-      - run: uv run python scripts/gen_frontend_types.py
+      - name: Install the locked environment
+        run: uv sync --group dev --frozen
+      - run: uv run --no-sync python scripts/gen_frontend_types.py
       - name: Fail if the generated frontend types are stale
         run: >-
           git diff --exit-code --
