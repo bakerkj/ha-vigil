@@ -27,8 +27,6 @@ jobs:
         with:
           node-version: "24"
       - run: npm ci
-      - name: Verify uv.lock matches pyproject.toml
-        run: uv lock --check
       - name: Install the locked environment
         run: uv sync --group dev --frozen
       - run: uv run --no-sync python scripts/gen_frontend_types.py

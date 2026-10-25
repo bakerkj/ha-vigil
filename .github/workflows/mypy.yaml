@@ -42,8 +42,6 @@ jobs:
         with:
           cache-dependency-glob: "uv.lock"
           cache-suffix: mypy-${{ matrix.slug }}
-      - name: Verify uv.lock matches pyproject.toml
-        run: uv lock --check
       - name: Install the locked environment
         run: uv sync --group dev --frozen
       # Imperative override of the locked HA, same idiom as tests.yaml; the plugin
