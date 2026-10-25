@@ -19,23 +19,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # HA 2026.8 — the pinned stable release pyproject/uv.lock track;
-          # Renovate-bumped within its minor.
-          - name: mypy (HA 2026.8)
-            slug: 2026-8
+          # The HA in uv.lock (the ceiling): pyproject pins the test plugin with
+          # `==`, so Renovate's bump of that pin moves this leg. The 2026.7 floor
+          # is intentionally NOT type-checked: its runtime-skipped composite-split
+          # tests carry pre-existing 2026.7-only type errors.
+          - name: mypy (HA ceiling, uv.lock)
+            slug: ceiling
             ha_override: ""
             prerelease: ""
-          # HA 2026.9 — the current stable release, ahead of the pin. Hard-coded to a
-          # beta because the plugin has no final-2026.9 pin yet (only 2026.9.0b6);
-          # bumped on purpose, and folded into the 2026.8 leg once that plugin ships.
-          # Some type errors surface only here (2026.9 widened async_get to include
-          # ChildDeviceEntry), which is the whole reason this leg exists. The 2026.7
-          # floor is intentionally NOT type-checked: its runtime-skipped
-          # composite-split tests carry pre-existing 2026.7-only type errors.
-          - name: mypy (HA 2026.9 current)
-            slug: 2026-9
-            ha_override: homeassistant==2026.9.0b6
-            prerelease: "--prerelease=allow"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
