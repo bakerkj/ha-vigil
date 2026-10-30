@@ -1,5 +1,57 @@
 # Changelog
 
+## [0.0.14](https://github.com/bakerkj/ha-vigil/compare/v0.0.13...v0.0.14) (2026-10-30)
+
+
+### Features
+
+* **uv:** standardize to pinned uv.lock with test and dev groups ([#150](https://github.com/bakerkj/ha-vigil/issues/150)) ([22ec561](https://github.com/bakerkj/ha-vigil/commit/22ec561d22e4b7c7a1744471f060be8cdbc7c5bf))
+
+
+### Bug Fixes
+
+* **deps:** pin the HA test plugin so the locked HA tracks releases ([#151](https://github.com/bakerkj/ha-vigil/issues/151)) ([a77aafe](https://github.com/bakerkj/ha-vigil/commit/a77aafea0cfaee6b7e52967ee5bce135a9446ab0))
+
+
+### Miscellaneous Chores
+
+* **deps:** lock file maintenance ([#152](https://github.com/bakerkj/ha-vigil/issues/152)) ([274c89d](https://github.com/bakerkj/ha-vigil/commit/274c89d86db9799ae29857416ee86ad935165a89))
+* **deps:** lock file maintenance ([#160](https://github.com/bakerkj/ha-vigil/issues/160)) ([b78e552](https://github.com/bakerkj/ha-vigil/commit/b78e5529dd7d89385417b964102c6017c484c6bc))
+* **deps:** lock file maintenance ([#161](https://github.com/bakerkj/ha-vigil/issues/161)) ([dce75fb](https://github.com/bakerkj/ha-vigil/commit/dce75fb6d959f96190831edf3a44f32e9b27d52c))
+* **deps:** lock file maintenance ([#162](https://github.com/bakerkj/ha-vigil/issues/162)) ([e1744e0](https://github.com/bakerkj/ha-vigil/commit/e1744e04f0e2fb56c8469f5f757ca1bd5023e9fa))
+* **deps:** lock file maintenance ([#163](https://github.com/bakerkj/ha-vigil/issues/163)) ([2ae14d7](https://github.com/bakerkj/ha-vigil/commit/2ae14d70f591a28c73791b36cdea3e2ab30d0412))
+* **deps:** update anthropics/claude-code-action action to v1.0.255 ([#146](https://github.com/bakerkj/ha-vigil/issues/146)) ([8a8be27](https://github.com/bakerkj/ha-vigil/commit/8a8be2700e55182e44a4a17a3125ff7a674a8f4d))
+* **deps:** update anthropics/claude-code-action action to v1.0.263 ([#155](https://github.com/bakerkj/ha-vigil/issues/155)) ([81300db](https://github.com/bakerkj/ha-vigil/commit/81300db006034154d0603e0270371ea15bbbd18a))
+* **deps:** update dependency eslint to v10.13.0 ([#141](https://github.com/bakerkj/ha-vigil/issues/141)) ([f51046d](https://github.com/bakerkj/ha-vigil/commit/f51046d8ac3fb8062878c21603e14e4fd1053295))
+* **deps:** update dependency jsdom to v30.1.3 ([#139](https://github.com/bakerkj/ha-vigil/issues/139)) ([95d6a1c](https://github.com/bakerkj/ha-vigil/commit/95d6a1ced582c299f1e6aaec611eec3d78839aca))
+* **deps:** update dependency node to v26 ([#158](https://github.com/bakerkj/ha-vigil/issues/158)) ([e7230e1](https://github.com/bakerkj/ha-vigil/commit/e7230e14e6701b7e60e2458f8b0c6e9d995702ef))
+* **deps:** update dependency uv to v0.13.0 ([#131](https://github.com/bakerkj/ha-vigil/issues/131)) ([4be6ff5](https://github.com/bakerkj/ha-vigil/commit/4be6ff55626a170aa6f7d0fd814f2947199d3cc3))
+* **deps:** update dependency uv to v0.13.1 ([#136](https://github.com/bakerkj/ha-vigil/issues/136)) ([ac393e5](https://github.com/bakerkj/ha-vigil/commit/ac393e5a5927ef7af977551427d2c4f5ec936616))
+* **deps:** update dependency uv to v0.13.3 ([#142](https://github.com/bakerkj/ha-vigil/issues/142)) ([f37931f](https://github.com/bakerkj/ha-vigil/commit/f37931fea6c9e8ad7acff6ab64d85a3e604d564d))
+* **deps:** update dependency uv to v0.13.4 ([#145](https://github.com/bakerkj/ha-vigil/issues/145)) ([25236f2](https://github.com/bakerkj/ha-vigil/commit/25236f2ed59cce4493370c8f6eda33a2505c132c))
+* **deps:** update dependency uv to v0.13.5 ([#147](https://github.com/bakerkj/ha-vigil/issues/147)) ([91b475f](https://github.com/bakerkj/ha-vigil/commit/91b475fc03c8adc6c8ff6ef6699dd80c634dd08e))
+* **deps:** update dependency uv to v0.13.6 ([#156](https://github.com/bakerkj/ha-vigil/issues/156)) ([1d3c3fc](https://github.com/bakerkj/ha-vigil/commit/1d3c3fc1c1c12fb238aa6813c5bb08f727519dab))
+* **deps:** update dependency vitest to v5.0.4 ([#134](https://github.com/bakerkj/ha-vigil/issues/134)) ([336b28b](https://github.com/bakerkj/ha-vigil/commit/336b28b4e13b50a1193b8103b528fe024c441e62))
+* **deps:** update dependency vitest to v5.0.5 ([#140](https://github.com/bakerkj/ha-vigil/issues/140)) ([cef585d](https://github.com/bakerkj/ha-vigil/commit/cef585dc1956a91aead13780f8cacf032c8ab007))
+* **deps:** update github-actions ([#128](https://github.com/bakerkj/ha-vigil/issues/128)) ([aa43f98](https://github.com/bakerkj/ha-vigil/commit/aa43f98ca4bf8ec59aca373a4b27432aba415d70))
+* **deps:** update github-actions ([#138](https://github.com/bakerkj/ha-vigil/issues/138)) ([325d5b7](https://github.com/bakerkj/ha-vigil/commit/325d5b79b4b04ab56255e55001093539f9b75808))
+* **deps:** update github-actions ([#143](https://github.com/bakerkj/ha-vigil/issues/143)) ([efd97ca](https://github.com/bakerkj/ha-vigil/commit/efd97cafd9998e2085ca5e6d188293b962b8928e))
+* **deps:** update github-actions ([#153](https://github.com/bakerkj/ha-vigil/issues/153)) ([28d4904](https://github.com/bakerkj/ha-vigil/commit/28d49042fa51449b47d9ffb84911e9e082e4767d))
+* **deps:** update github-actions ([#154](https://github.com/bakerkj/ha-vigil/issues/154)) ([ae908d1](https://github.com/bakerkj/ha-vigil/commit/ae908d1ad1557da2d6d90efa258adb2aa5f4c004))
+* **deps:** update github-actions ([#159](https://github.com/bakerkj/ha-vigil/issues/159)) ([839700a](https://github.com/bakerkj/ha-vigil/commit/839700a1d2b07017b09448404566ce51d6b43b31))
+* **deps:** update j178/prek-action action to v3.1.0 ([#144](https://github.com/bakerkj/ha-vigil/issues/144)) ([6a21964](https://github.com/bakerkj/ha-vigil/commit/6a219647ffda44afb53bb8f1ac4489766db07a0f))
+* **deps:** update pre-commit hook astral-sh/ruff-pre-commit to v0.17.0 ([#130](https://github.com/bakerkj/ha-vigil/issues/130)) ([61f5bb8](https://github.com/bakerkj/ha-vigil/commit/61f5bb807b5314dd1b1eeb6f5159cedcfef621c9))
+* **deps:** update pre-commit hook astral-sh/ruff-pre-commit to v0.17.1 ([#137](https://github.com/bakerkj/ha-vigil/issues/137)) ([66bc41a](https://github.com/bakerkj/ha-vigil/commit/66bc41a4ebf9cbe82e8fbf9ecc1caa1c4f1e5ec4))
+* **deps:** update pre-commit hook astral-sh/ruff-pre-commit to v0.17.2 ([#148](https://github.com/bakerkj/ha-vigil/issues/148)) ([0c7977f](https://github.com/bakerkj/ha-vigil/commit/0c7977f62d7df93fc5778a7c5f18e00efe56d581))
+* **deps:** update pre-commit hook rbubley/mirrors-prettier to v3.9.10 ([#133](https://github.com/bakerkj/ha-vigil/issues/133)) ([40a23b0](https://github.com/bakerkj/ha-vigil/commit/40a23b06a4fc44c9ec44a64ff49738e002f1c264))
+* **deps:** update pre-commit hooks ([#157](https://github.com/bakerkj/ha-vigil/issues/157)) ([3531079](https://github.com/bakerkj/ha-vigil/commit/3531079a0cae601b5716345024964dcc5cc353f0))
+* **renovate:** enable lockFileMaintenance ([#149](https://github.com/bakerkj/ha-vigil/issues/149)) ([fc07ad3](https://github.com/bakerkj/ha-vigil/commit/fc07ad3579202544c1994712de51e90d541ed242))
+
+
+### Continuous Integration
+
+* **claude:** gate on-demand [@claude](https://github.com/claude) workflow to repo owner ([#132](https://github.com/bakerkj/ha-vigil/issues/132)) ([ce96331](https://github.com/bakerkj/ha-vigil/commit/ce9633115bc3abc154e6cab37c3d1c2d63ce5fff))
+
 ## [0.0.13](https://github.com/bakerkj/ha-vigil/compare/v0.0.12...v0.0.13) (2026-10-09)
 
 
